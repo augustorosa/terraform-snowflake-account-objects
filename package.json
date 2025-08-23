@@ -1,0 +1,56 @@
+{
+  "name": "terraform-snowflake-account-objects",
+  "version": "0.0.0-development",
+  "description": "Terraform module for managing Snowflake account objects with enterprise-grade features",
+  "private": true,
+  "scripts": {
+    "commit": "cz",
+    "release": "semantic-release",
+    "release:dry": "semantic-release --dry-run",
+    "lint:commits": "commitlint --from=HEAD~1",
+    "prepare": "husky install"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/augustorosa/terraform-snowflake-account-objects.git"
+  },
+  "keywords": [
+    "terraform",
+    "snowflake",
+    "infrastructure-as-code",
+    "data-warehouse",
+    "rbac",
+    "security"
+  ],
+  "author": "Augusto Rosa",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/augustorosa/terraform-snowflake-account-objects/issues"
+  },
+  "homepage": "https://github.com/augustorosa/terraform-snowflake-account-objects#readme",
+  "devDependencies": {
+    "@commitlint/cli": "^18.4.3",
+    "@commitlint/config-conventional": "^18.4.3",
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/commit-analyzer": "^11.1.0",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^9.2.6",
+    "@semantic-release/release-notes-generator": "^12.1.0",
+    "commitizen": "^4.3.0",
+    "conventional-changelog-conventionalcommits": "^7.0.2",
+    "cz-conventional-changelog": "^3.3.0",
+    "husky": "^8.0.3",
+    "semantic-release": "^22.0.12"
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "release": {
+    "branches": ["main", "master"]
+  }
+} 

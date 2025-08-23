@@ -1,0 +1,270 @@
+# Roles Configuration - Supporting 3-Layer Architecture
+# This file defines roles and their permissions aligned with RAW → PREPARE → ANALYZE
+
+version: "1.0"
+description: "Role hierarchy for 3-layer data architecture"
+
+# Global role settings
+settings:
+  naming_pattern: "{env}_{project}_{role_type}_{role_name}"
+  create_parent_roles: false  # Set to true in production
+  
+# Role definitions
+roles:
+  # System administration roles
+  system:
+    admin:
+      name: "{env}_{project}_admin"
+      parent_role: "SYSADMIN"
+      comment: "Project administrator with full access"
+      
+    security_admin:
+      name: "{env}_{project}_security_admin"
+      parent_role: "SECURITYADMIN"
+      comment: "Manages users and roles for the project"
+      
+    warehouse_admin:
+      name: "{env}_{project}_warehouse_admin"
+      parent_role: "{env}_{project}_admin"
+      comment: "Manages warehouse resources and monitors"
+
+  # Data layer-specific roles
+  layer_roles:
+    # RAW Layer Roles
+    loader:
+      name: "{env}_{project}_loader"
+      parent_role: "PUBLIC"
+      comment: "Generic data loader role for RAW layer"
+      permissions:
+        databases:
+          - name: "{env}_{project}_db"
+            schemas: 
+              - "raw"
+              - "raw.*"  # All sub-schemas
+            privileges: ["write", "create"]
+        warehouses:
+          - name: "{env}_{project}_load_wh"
+            privileges: ["usage"]
+            
+    # PREPARE Layer Roles  
+    transformer:
+      name: "{env}_{project}_transformer"
+      parent_role: "PUBLIC"
+      comment: "Data transformation role for PREPARE layer"
+      permissions:
+        databases:
+          - name: "{env}_{project}_db"
+            schemas:
+              - schema: "raw"
+                privileges: ["read"]
+              - schema: "prepare"
+                privileges: ["read", "write", "create"]
+              - schema: "analyze"
+                privileges: ["write", "create"]
+        warehouses:
+          - name: "{env}_{project}_transform_wh"
+            privileges: ["usage", "operate"]
+            
+    # ANALYZE Layer Roles
+    analyst:
+      name: "{env}_{project}_analyst"
+      parent_role: "PUBLIC"
+      comment: "Data analyst role with read access to analytics"
+      permissions:
+        databases:
+          - name: "{env}_{project}_db"
+            schemas:
+              - schema: "prepare"
+                privileges: ["read"]
+              - schema: "analyze"
+                privileges: ["read"]
+              - schema: "sandbox_{user}"
+                privileges: ["read", "write", "create"]
+        warehouses:
+          - name: "{env}_{project}_analytics_wh"
+            privileges: ["usage"]
+
+  # Functional roles
+  functional:
+    data_engineer:
+      name: "{env}_{project}_data_engineer"
+      parent_role: "{env}_{project}_admin"
+      comment: "Full access to build and maintain data pipelines"
+      permissions:
+        databases:
+          - name: "{env}_{project}_db"
+            privileges: ["all"]
+        warehouses:
+          - privileges: ["all"]
+            
+    data_scientist:
+      name: "{env}_{project}_data_scientist"
+      parent_role: "{env}_{project}_analyst"
+      comment: "Advanced analytics and ML model development"
+      permissions:
+        databases:
+          - name: "{env}_{project}_db"
+            schemas:
+              - schema: "prepare"
+                privileges: ["read"]
+              - schema: "analyze"
+                privileges: ["read", "write"]
+              - schema: "ml_workspace"
+                privileges: ["all"]
+        warehouses:
+          - name: "{env}_{project}_ml_wh"
+            privileges: ["usage", "operate"]
+            
+    reporter:
+      name: "{env}_{project}_reporter"
+      parent_role: "PUBLIC"
+      comment: "Read-only access for reporting tools"
+      permissions:
+        databases:
+          - name: "{env}_{project}_db"
+            schemas:
+              - schema: "analyze"
+                privileges: ["read"]
+        warehouses:
+          - name: "{env}_{project}_reporting_wh"
+            privileges: ["usage"]
+            
+    viewer:
+      name: "{env}_{project}_viewer"
+      parent_role: "PUBLIC"
+      comment: "Minimal read-only access"
+      permissions:
+        databases:
+          - name: "{env}_{project}_db"
+            schemas:
+              - schema: "analyze.reports"
+                privileges: ["read"]
+        warehouses:
+          - name: "{env}_{project}_query_wh"
+            privileges: ["usage"]
+
+  # Integration-specific roles
+  integration:
+    # dbt roles
+    dbt_transformer:
+      name: "{env}_{project}_dbt_transformer"
+      parent_role: "{env}_{project}_transformer"
+      comment: "dbt service account for transformations"
+      service_account: true
+      permissions:
+        databases:
+          - name: "{env}_{project}_db"
+            schemas:
+              - schema: "raw"
+                privileges: ["read"]
+                future_grants: true
+              - schema: "prepare"
+                privileges: ["read", "write", "create"]
+                future_grants: true
+              - schema: "analyze"
+                privileges: ["write", "create"]
+                future_grants: true
+        warehouses:
+          - name: "{env}_{project}_transform_wh"
+            privileges: ["usage", "operate", "monitor"]
+    
+    # Airflow roles
+    airflow_operator:
+      name: "{env}_{project}_airflow_operator"
+      parent_role: "{env}_{project}_admin"
+      comment: "Airflow orchestration service account"
+      service_account: true
+      permissions:
+        account_level:
+          - "EXECUTE TASK"
+          - "EXECUTE MANAGED TASK"
+        databases:
+          - name: "{env}_{project}_db"
+            privileges: ["usage", "monitor"]
+            all_schemas: true
+        tasks:
+          - database: "{env}_{project}_db"
+            privileges: ["operate", "monitor"]
+        warehouses:
+          - privileges: ["usage", "operate", "monitor"]
+    
+    # Fivetran roles
+    fivetran_loader:
+      name: "{env}_{project}_fivetran_loader"
+      parent_role: "{env}_{project}_loader"
+      comment: "Fivetran data ingestion service account"
+      service_account: true
+      permissions:
+        databases:
+          - name: "{env}_{project}_db"
+            privileges: ["usage", "create schema"]
+            schemas:
+              - schema: "raw"
+                privileges: ["usage", "create table", "create stage"]
+                future_grants: true
+              - schema: "fivetran_metadata"
+                privileges: ["all"]
+                ownership: true
+        warehouses:
+          - name: "{env}_{project}_load_wh"
+            privileges: ["usage"]
+    
+    # BI tool roles
+    bi_tool:
+      name: "{env}_{project}_bi_tool"
+      parent_role: "{env}_{project}_reporter"
+      comment: "Business Intelligence tool service account"
+      service_account: true
+      permissions:
+        databases:
+          - name: "{env}_{project}_db"
+            schemas:
+              - schema: "analyze"
+                privileges: ["read"]
+                tables: ["select"]
+                views: ["select"]
+        warehouses:
+          - name: "{env}_{project}_bi_wh"
+            privileges: ["usage"]
+
+# Role hierarchy visualization
+hierarchy:
+  description: "Visual representation of role inheritance"
+  structure: |
+    ACCOUNTADMIN
+    ├── SYSADMIN
+    │   └── {env}_{project}_admin
+    │       ├── {env}_{project}_data_engineer
+    │       ├── {env}_{project}_warehouse_admin
+    │       └── {env}_{project}_airflow_operator
+    ├── SECURITYADMIN
+    │   └── {env}_{project}_security_admin
+    └── PUBLIC
+        ├── {env}_{project}_loader
+        │   └── {env}_{project}_fivetran_loader
+        ├── {env}_{project}_transformer
+        │   └── {env}_{project}_dbt_transformer
+        ├── {env}_{project}_analyst
+        │   └── {env}_{project}_data_scientist
+        ├── {env}_{project}_reporter
+        │   └── {env}_{project}_bi_tool
+        └── {env}_{project}_viewer
+
+# Grant patterns for simplified configuration
+grant_patterns:
+  read:
+    - "USAGE"
+    - "SELECT"
+    - "REFERENCES"
+  write:
+    - "INSERT"
+    - "UPDATE"
+    - "DELETE"
+    - "TRUNCATE"
+  create:
+    - "CREATE TABLE"
+    - "CREATE VIEW"
+    - "CREATE FUNCTION"
+    - "CREATE PROCEDURE"
+  all:
+    - "ALL PRIVILEGES" 

@@ -1,0 +1,26 @@
+# Snowflake Connection Configuration
+# Set these environment variables before running terraform:
+# export SNOWFLAKE_ACCOUNT="your-account-identifier"
+# export SNOWFLAKE_USER="your-username"
+# export SNOWFLAKE_PASSWORD="your-password"
+# export SNOWFLAKE_REGION="us-east-1"
+
+# Or use these variables in terraform.tfvars (less secure):
+snowflake_account  = "your-account-identifier"
+snowflake_username = "your-username"
+snowflake_password = "your-password"
+snowflake_region   = "us-east-1"
+
+# Project Configuration
+project_name = "analytics"
+environment  = "dev"  # Options: dev, staging, prod
+
+# Organization Details
+organization_name = "my-company"
+team_name         = "data-team"
+
+# User Passwords (for testing purposes)
+# In production, use secure password management
+analyst_password  = "AnalystPass123!"
+engineer_password = "EngineerPass123!"
+admin_password    = "AdminPass123!" 
