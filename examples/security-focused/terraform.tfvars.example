@@ -1,0 +1,200 @@
+# =============================================================================
+# SECURITY-FOCUSED EXAMPLE CONFIGURATION
+# =============================================================================
+# This example demonstrates all Provider 2.7.0 security features
+
+# =============================================================================
+# PROJECT CONFIGURATION
+# =============================================================================
+project_name = "SECURE_CORP"
+environment  = "prod"
+
+# =============================================================================
+# AUTHENTICATION POLICIES (Provider 2.7.0)
+# =============================================================================
+
+# Enforce MFA for human users, OAuth for service accounts
+authentication_policies = {
+  "MFA_REQUIRED_HUMANS" = {
+    comment                    = "Enforce MFA for all human users"
+    authentication_methods     = ["PASSWORD", "SAML"]
+    mfa_authentication_methods = ["PASSWORD", "SAML"]
+    mfa_enrollment            = "REQUIRED"
+    client_types              = ["SNOWFLAKE_UI", "DRIVERS", "SNOWSQL"]
+  }
+  "SERVICE_ACCOUNTS_OAUTH" = {
+    comment                = "Service accounts - OAuth/JWT only, no MFA"
+    authentication_methods = ["OAUTH", "JWT"]
+    mfa_enrollment        = "OPTIONAL"
+    client_types          = ["DRIVERS", "SNOWSQL"]
+  }
+}
+
+# =============================================================================
+# EXTERNAL OAUTH INTEGRATIONS (Workload Identity Federation)
+# =============================================================================
+
+# Configure workload identity federation for secure, credential-less authentication
+external_oauth_integrations = {
+  "GITHUB_ACTIONS" = {
+    comment                = "GitHub Actions workload identity federation"
+    type                  = "EXTERNAL_OAUTH"
+    external_oauth_type   = "CUSTOM"
+    external_oauth_issuer = "https://token.actions.githubusercontent.com"
+    external_oauth_audience_list = ["https://github.com/your-org"]
+    external_oauth_token_user_mapping_claim = "sub"
+    external_oauth_snowflake_user_mapping_attribute = "LOGIN_NAME"
+  }
+  "AWS_WORKLOAD_IDENTITY" = {
+    comment                = "AWS EKS workload identity federation"
+    type                  = "EXTERNAL_OAUTH"
+    external_oauth_type   = "CUSTOM"
+    external_oauth_issuer = "https://oidc.eks.us-west-2.amazonaws.com/id/YOUR-CLUSTER-ID"
+    external_oauth_audience_list = ["sts.amazonaws.com"]
+    external_oauth_token_user_mapping_claim = "sub"
+    external_oauth_snowflake_user_mapping_attribute = "LOGIN_NAME"
+  }
+}
+
+# =============================================================================
+# SERVICE USERS WITH RSA KEY-PAIR AUTHENTICATION
+# =============================================================================
+
+# Service users for different automation purposes
+service_users = {
+  "TERRAFORM_SERVICE" = {
+    comment           = "Terraform automation service user"
+    default_role      = "SYSADMIN"
+    email            = "terraform@company.com"
+    display_name     = "Terraform Service Account"
+    days_to_expiry   = 365
+    # rsa_public_key   = "base64_encoded_public_key_here"
+  }
+  "CI_CD_SERVICE" = {
+    comment           = "CI/CD pipeline service user"
+    default_role      = "TRANSFORMER_ROLE"
+    email            = "cicd@company.com"
+    display_name     = "CI/CD Service Account"
+    days_to_expiry   = 180
+    # rsa_public_key   = "base64_encoded_public_key_here"
+  }
+  "MONITORING_SERVICE" = {
+    comment           = "Monitoring and alerting service user"
+    default_role      = "READER"
+    email            = "monitoring@company.com"
+    display_name     = "Monitoring Service Account"
+    days_to_expiry   = 90
+    # rsa_public_key   = "base64_encoded_public_key_here"
+  }
+}
+
+# =============================================================================
+# PERSONAL ACCESS TOKENS
+# =============================================================================
+
+# PAT tokens with role restrictions and short expiry times
+pat_tokens = {
+  "terraform_automation_token" = {
+    user_name         = "TERRAFORM_SERVICE"
+    comment          = "Token for Terraform automation"
+    days_to_expiry   = 90
+    role_restriction = ["SYSADMIN", "SECURITYADMIN"]
+  }
+  "cicd_pipeline_token" = {
+    user_name         = "CI_CD_SERVICE"
+    comment          = "Token for CI/CD pipeline"
+    days_to_expiry   = 30
+    role_restriction = ["TRANSFORMER_ROLE"]
+  }
+  "monitoring_token" = {
+    user_name         = "MONITORING_SERVICE"
+    comment          = "Token for monitoring and alerting"
+    days_to_expiry   = 60
+    role_restriction = ["READER"]
+  }
+}
+
+# =============================================================================
+# NETWORK SECURITY CONFIGURATION
+# =============================================================================
+
+# Define IP ranges for different access patterns
+network_rules = {
+  "CORPORATE_NETWORK" = {
+    comment    = "Corporate office IP ranges"
+    type       = "IPV4"
+    value_list = ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]
+    mode       = "INGRESS"
+  }
+  "CLOUD_PROVIDERS" = {
+    comment    = "Trusted cloud provider IP ranges"
+    type       = "IPV4"
+    value_list = ["52.0.0.0/8", "54.0.0.0/8"]  # AWS examples - update with your ranges
+    mode       = "INGRESS"
+  }
+  "VPN_ENDPOINTS" = {
+    comment    = "VPN endpoint IP addresses"
+    type       = "IPV4"
+    value_list = ["203.0.113.0/24"]  # Example - update with your VPN ranges
+    mode       = "INGRESS"
+  }
+}
+
+# Network policies for different user types
+network_policies = {
+  "HUMAN_USERS_POLICY" = {
+    comment = "Restrictive policy for human users - corporate network and VPN only"
+    allowed_network_rule_list = ["CORPORATE_NETWORK", "VPN_ENDPOINTS"]
+    blocked_ip_list = []  # Rules handle restrictions
+  }
+  "SERVICE_ACCOUNTS_POLICY" = {
+    comment = "Policy for service accounts and automation"
+    allowed_network_rule_list = ["CORPORATE_NETWORK", "CLOUD_PROVIDERS"]
+    blocked_ip_list = []
+  }
+}
+
+# Default network policy IP ranges
+allowed_ip_ranges = [
+  "10.0.0.0/8",      # Corporate network
+  "172.16.0.0/12",   # Corporate network
+  "192.168.0.0/16",  # Corporate network
+]
+
+blocked_ip_ranges = [
+  "169.254.0.0/16",  # AWS metadata service
+  "127.0.0.0/8",     # Localhost
+]
+
+# =============================================================================
+# CUSTOM ROLES FOR SECURITY MANAGEMENT
+# =============================================================================
+
+custom_roles = {
+  "SECURITY_ADMIN" = {
+    comment = "Enhanced security administration role"
+  }
+  "COMPLIANCE_AUDITOR" = {
+    comment = "Read-only access for compliance auditing"
+  }
+  "SERVICE_ACCOUNT_MANAGER" = {
+    comment = "Manages service accounts and authentication"
+  }
+}
+
+# =============================================================================
+# SECURITY CONFIGURATION NOTES
+# =============================================================================
+
+# 🔐 SECURITY CHECKLIST:
+# 
+# 1. UPDATE IP RANGES: Replace example IP ranges with your actual corporate/VPN/cloud IPs
+# 2. GENERATE RSA KEYS: Create RSA key pairs for each service user
+# 3. CONFIGURE OAUTH: Set up your identity provider for OAuth integrations
+# 4. TEST AUTHENTICATION: Verify MFA enforcement and OAuth flows
+# 5. MONITOR ACCESS: Enable Trust Center notifications
+# 6. ROTATE CREDENTIALS: Implement regular key and token rotation
+# 7. AUDIT REGULARLY: Review access patterns and permissions monthly
+#
+# 🚨 IMPORTANT: This configuration enforces strict security controls.
+#    Ensure you have proper access before applying in production!

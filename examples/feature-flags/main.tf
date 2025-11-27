@@ -45,7 +45,12 @@ module "full_stack" {
   enable_warehouses       = true
   enable_data_loading     = true
   enable_resource_monitors = true
-  enable_network_policies = false  # Not implemented yet
+  enable_auto_classification     = var.enable_auto_classification
+  enable_key_pair_auth          = var.enable_key_pair_auth
+  enable_pat_tokens             = var.enable_pat_tokens
+  enable_authentication_policies = var.enable_authentication_policies
+  enable_external_oauth         = var.enable_external_oauth
+  enable_network_policies       = true  # Now implemented!
   
   # =============================================================================
   # RBAC CONFIGURATION
@@ -107,14 +112,14 @@ module "full_stack" {
   databases = {
     # Analytics database with full 3-layer architecture
     analytics = {
-      comment = "Analytics database with RAW, PREPARE, ANALYZE layers"
+      comment = "Analytics database with RAW, PREPARE, ANALYSIS layers"
       suffix  = "ANALYTICS"
       data_retention_days = 7
       
       enable_3_layer_architecture = true
       prepare_layer_managed_access = true
       prepare_layer_transient     = false
-      analyze_layer_managed_access = true
+      analysis_layer_managed_access = true
       
       # Additional custom schemas
       custom_schemas = {
@@ -189,7 +194,7 @@ module "full_stack" {
       enable_3_layer_architecture = true
       prepare_layer_managed_access = true
       prepare_layer_transient     = true  # Transient for ML preprocessing
-      analyze_layer_managed_access = true
+      analysis_layer_managed_access = true
       
       custom_schemas = {
         MODELS = {
@@ -495,7 +500,7 @@ module "database_only" {
       
       enable_3_layer_architecture = true
       prepare_layer_managed_access = true
-      analyze_layer_managed_access = true
+      analysis_layer_managed_access = true
       
       create_layer_info_views = true
     }

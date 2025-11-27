@@ -1,0 +1,50 @@
+# =============================================================================
+# AUTHENTICATION TEST CONFIGURATION EXAMPLE
+# =============================================================================
+# Copy this file to terraform.tfvars and configure your Snowflake credentials
+
+# =============================================================================
+# SNOWFLAKE CONNECTION (Required)
+# =============================================================================
+
+# Option 1: Username/Password Authentication
+snowflake_account  = "your-account-identifier"  # e.g., "abc12345.us-east-1"
+snowflake_user     = "your-username"
+snowflake_password = "your-password"
+snowflake_role     = "ACCOUNTADMIN"  # Required for comprehensive testing
+snowflake_warehouse = "COMPUTE_WH"
+
+# Option 2: Key-Pair Authentication (Alternative to password)
+# snowflake_account              = "your-account-identifier"
+# snowflake_user                 = "your-username"  
+# snowflake_private_key_path     = "~/.snowflake/rsa_key.p8"
+# snowflake_private_key_passphrase = "your-key-passphrase"
+# snowflake_role                 = "ACCOUNTADMIN"
+
+# =============================================================================  
+# TEST CONTROL (Important!)
+# =============================================================================
+
+# Set to true when you're ready to actually deploy and test
+actually_deploy = false
+
+# Safety feature: Auto-mark resources for cleanup after specified time
+auto_destroy_after_minutes = 60
+
+# =============================================================================
+# EXAMPLE REAL RSA KEYS FOR TESTING (Generate these first!)
+# =============================================================================
+
+# To generate RSA keys for testing:
+# openssl genrsa 2048 | openssl pkcs8 -topk8 -inform PEM -out test_rsa_key.p8 -nocrypt
+# openssl rsa -in test_rsa_key.p8 -pubout -out test_rsa_key.pub
+# 
+# Then base64 encode the public key:
+# base64 -i test_rsa_key.pub | tr -d '\n'
+# 
+# Use the base64 output in the service_users configuration below:
+
+# Uncomment and configure with real keys for full testing:
+# test_rsa_public_key_terraform = "your_base64_encoded_public_key_here"
+# test_rsa_public_key_dbt       = "your_base64_encoded_public_key_here" 
+# test_rsa_public_key_monitor   = "your_base64_encoded_public_key_here" 

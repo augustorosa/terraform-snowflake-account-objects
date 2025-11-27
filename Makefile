@@ -39,7 +39,7 @@ lint: ## Run all linters
 	@tflint --init || echo "⚠️  Please install tflint"
 	@tflint --recursive
 	@echo "Running yamllint..."
-	@yamllint -c .yamllint config/ || echo "⚠️  Please install yamllint"
+	@yamllint -c .yamllint docs/config-patterns/ || echo "⚠️  Please install yamllint"
 	@echo "✅ Linting complete!"
 
 security: ## Run security scans

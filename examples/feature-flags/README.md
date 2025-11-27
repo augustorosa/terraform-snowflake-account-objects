@@ -117,7 +117,7 @@ deploy_minimal_stack = true
 **What it creates**:
 - ✅ **Basic RBAC**: Essential roles for database access
 - ✅ **Basic Tagging**: Governance and operational tags
-- ✅ **Single Database**: Complete 3-layer architecture (RAW, PREPARE, ANALYZE)
+- ✅ **Single Database**: Complete 3-layer architecture (RAW, PREPARE, ANALYSIS)
 - ✅ **Layer Info Views**: Metadata views for each layer
 - ❌ No warehouses, data loading, or resource monitors
 
@@ -194,8 +194,8 @@ SELECT * FROM _LAYER_INFO;
 USE SCHEMA PREPARE;
 SELECT * FROM _LAYER_INFO;
 
--- Check ANALYZE layer
-USE SCHEMA ANALYZE;
+-- Check ANALYSIS layer
+USE SCHEMA ANALYSIS;
 SELECT * FROM _LAYER_INFO;
 ```
 
@@ -353,8 +353,8 @@ terraform destroy
 ## 📚 **Related Documentation**
 
 - [Main Module README](../../README.md)
-- [RBAC Architecture](../../requirements/RBAC_ARCHITECTURE.md)
-- [Technical Requirements](../../requirements/TECHNICAL_REQUIREMENTS.md)
+- [RBAC Architecture](../../docs/RBAC_ARCHITECTURE.md)
+- [Technical Requirements](../../docs/TECHNICAL_REQUIREMENTS.md)
 - [Contributing Guide](../../CONTRIBUTING.md)
 
 ---

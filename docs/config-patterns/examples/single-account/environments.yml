@@ -1,0 +1,263 @@
+# Environments Configuration
+# This file defines environment-specific settings and overrides
+
+version: "1.0"
+description: "Environment configuration for single and multi-account deployments"
+
+# Global settings applied to all environments
+global:
+  organization: "mycompany"
+  region: "us-west-2"
+  project: "analytics"
+  
+  # Naming convention
+  naming_convention:
+    pattern: "{env}_{project}_{resource_type}_{name}"
+    uppercase: true
+    separator: "_"
+  
+  # Default tags for all resources
+  default_tags:
+    managed_by: "terraform"
+    project: "{project}"
+    environment: "{env}"
+    
+# Environment definitions
+environments:
+  # Development environment
+  dev:
+    # Account configuration
+    account:
+      # Single-account approach (same account, different prefixes)
+      type: "single"
+      name: "main"
+      locator: "mycompany-main"
+      
+      # Multi-account approach (uncomment to use)
+      # type: "multi"
+      # name: "dev"
+      # locator: "mycompany-dev"
+    
+    # Environment-specific settings
+    settings:
+      # Resource sizing (smaller for dev)
+      warehouse_sizes:
+        default: "X-SMALL"
+        transform: "SMALL"
+        analytics: "SMALL"
+        
+      # Retention policies (shorter for dev)
+      data_retention_days:
+        default: 1
+        raw: 1
+        prepare: 3
+        analysis: 7
+        
+      # Cost controls (strict for dev)
+      credit_quota:
+        monthly: 1000
+        weekly: 250
+        daily: 50
+        
+      # Development features
+      features:
+        time_travel: true
+        fail_safe: false
+        auto_clustering: false
+        materialized_views: false
+        
+    # Environment-specific overrides
+    overrides:
+      warehouses:
+        # Smaller clusters for dev
+        max_cluster_count: 2
+        auto_suspend: 60
+        
+      users:
+        # Relaxed password policy for dev
+        password_min_length: 8
+        password_max_age_days: 180
+        
+      network:
+        # Open access for dev (not recommended for production)
+        allowed_ip_list: ["0.0.0.0/0"]
+  
+  # Staging environment
+  staging:
+    account:
+      type: "single"
+      name: "main"
+      locator: "mycompany-main"
+      
+    settings:
+      # Resource sizing (medium for staging)
+      warehouse_sizes:
+        default: "SMALL"
+        transform: "MEDIUM"
+        analytics: "MEDIUM"
+        
+      # Retention policies (moderate for staging)
+      data_retention_days:
+        default: 7
+        raw: 3
+        prepare: 7
+        analysis: 14
+        
+      # Cost controls (moderate for staging)
+      credit_quota:
+        monthly: 5000
+        weekly: 1250
+        daily: 200
+        
+      # Staging features
+      features:
+        time_travel: true
+        fail_safe: true
+        auto_clustering: true
+        materialized_views: true
+        
+    overrides:
+      warehouses:
+        max_cluster_count: 4
+        auto_suspend: 300
+        
+      users:
+        password_min_length: 12
+        password_max_age_days: 90
+        
+      network:
+        allowed_ip_list:
+          - "10.0.0.0/8"     # Internal network
+          - "172.16.0.0/12"  # VPN
+  
+  # Production environment
+  prod:
+    account:
+      # Multi-account approach recommended for production
+      type: "multi"
+      name: "prod"
+      locator: "mycompany-prod"
+      
+    settings:
+      # Resource sizing (larger for prod)
+      warehouse_sizes:
+        default: "MEDIUM"
+        transform: "LARGE"
+        analytics: "LARGE"
+        bi: "X-LARGE"
+        
+      # Retention policies (longer for prod)
+      data_retention_days:
+        default: 90
+        raw: 30
+        prepare: 90
+        analysis: 365
+        
+      # Cost controls (higher limits for prod)
+      credit_quota:
+        monthly: 20000
+        weekly: 5000
+        daily: 1000
+        
+      # Production features
+      features:
+        time_travel: true
+        fail_safe: true
+        auto_clustering: true
+        materialized_views: true
+        query_acceleration: true
+        search_optimization: true
+        
+      # High availability
+      replication:
+        enabled: true
+        target_account: "mycompany-prod-dr"
+        target_region: "us-east-1"
+        
+    overrides:
+      warehouses:
+        max_cluster_count: 10
+        auto_suspend: 600
+        scaling_policy: "STANDARD"
+        
+      users:
+        password_min_length: 14
+        password_max_age_days: 60
+        require_mfa: true
+        
+      network:
+        allowed_ip_list:
+          - "10.0.0.0/8"      # Internal network
+          - "52.1.2.3/32"     # NAT Gateway
+          - "34.5.6.7/32"     # Bastion host
+          
+      monitoring:
+        enable_query_history: true
+        enable_access_history: true
+        enable_resource_monitors: true
+        alert_email: "snowflake-alerts@company.com"
+
+# Environment promotion paths
+promotion:
+  paths:
+    - from: "dev"
+      to: "staging"
+      approval_required: false
+      automated: true
+      
+    - from: "staging"
+      to: "prod"
+      approval_required: true
+      automated: false
+      approvers: ["jane.doe@company.com", "john.smith@company.com"]
+
+# Environment-specific resource naming
+resource_naming:
+  single_account:
+    # When using single account, prefix with environment
+    database: "{env}_{project}_db"
+    warehouse: "{env}_{project}_{type}_wh"
+    role: "{env}_{project}_{role_name}"
+    user: "{env}_{project}_{username}"
+    
+  multi_account:
+    # When using multi-account, environment prefix optional
+    database: "{project}_db"
+    warehouse: "{project}_{type}_wh"
+    role: "{project}_{role_name}"
+    user: "{project}_{username}"
+
+# Environment variables and secrets
+variables:
+  dev:
+    snowflake_account: "${SNOWFLAKE_DEV_ACCOUNT}"
+    terraform_role: "DEV_TERRAFORM_DEPLOYER"
+    
+  staging:
+    snowflake_account: "${SNOWFLAKE_STAGING_ACCOUNT}"
+    terraform_role: "STAGING_TERRAFORM_DEPLOYER"
+    
+  prod:
+    snowflake_account: "${SNOWFLAKE_PROD_ACCOUNT}"
+    terraform_role: "PROD_TERRAFORM_DEPLOYER"
+
+# Deployment configuration
+deployment:
+  # State backend configuration per environment
+  state_backend:
+    dev:
+      bucket: "mycompany-terraform-state-dev"
+      key: "snowflake/dev/terraform.tfstate"
+      region: "us-west-2"
+      
+    staging:
+      bucket: "mycompany-terraform-state-staging"
+      key: "snowflake/staging/terraform.tfstate"
+      region: "us-west-2"
+      
+    prod:
+      bucket: "mycompany-terraform-state-prod"
+      key: "snowflake/prod/terraform.tfstate"
+      region: "us-west-2"
+      encrypt: true
+      kms_key_id: "arn:aws:kms:us-west-2:123456789012:key/..." 

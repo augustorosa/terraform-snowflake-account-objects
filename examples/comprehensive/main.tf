@@ -89,9 +89,9 @@ resource "snowflake_schema" "prepare_schema" {
   comment  = "Prepare data layer - cleaned and transformed data"
 }
 
-resource "snowflake_schema" "analyze_schema" {
+resource "snowflake_schema" "analysis_schema" {
   database = snowflake_database.analytics_db.name
-  name     = "ANALYZE"
+  name     = "ANALYSIS"
   comment  = "Analyze data layer - business-ready data for reporting"
 }
 
@@ -161,9 +161,9 @@ resource "snowflake_table" "sample_raw_table" {
   comment = "Sample raw data table for testing"
 }
 
-resource "snowflake_table" "sample_analyze_table" {
+resource "snowflake_table" "sample_analysis_table" {
   database = snowflake_database.analytics_db.name
-  schema   = snowflake_schema.analyze_schema.name
+  schema   = snowflake_schema.analysis_schema.name
   name     = "SAMPLE_ANALYTICS_DATA"
   
   column {

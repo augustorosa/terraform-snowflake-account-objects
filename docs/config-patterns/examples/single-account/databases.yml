@@ -1,0 +1,148 @@
+# Database Configuration - 3-Layer Architecture Example
+# This file defines databases and schemas following the RAW → PREPARE → ANALYSIS pattern
+
+version: "1.0"
+description: "Single database with 3-layer architecture for analytics platform"
+
+databases:
+  # Main analytics database containing all three layers
+  main:
+    name: "{env}_{project}_db"
+    comment: "Main analytics database for {project} in {env} environment"
+    data_retention_time_in_days: 
+      dev: 1
+      staging: 7
+      prod: 90
+    
+    # 3-Layer Schema Architecture
+    schemas:
+      # Layer 1: RAW - Landing zone for source data
+      raw:
+        name: "raw"
+        comment: "Landing zone for source data - no transformations"
+        managed_access: false
+        
+        # Sub-schemas for different data sources (optional)
+        sub_schemas:
+          - name: "salesforce"
+            comment: "Salesforce data landing"
+            owner_role: "{env}_{project}_fivetran_loader"
+          
+          - name: "stripe" 
+            comment: "Stripe payment data landing"
+            owner_role: "{env}_{project}_fivetran_loader"
+            
+          - name: "files"
+            comment: "File-based data landing (CSV, JSON, etc.)"
+            owner_role: "{env}_{project}_loader"
+      
+      # Layer 2: PREPARE - Data preparation and integration
+      prepare:
+        name: "prepare"
+        comment: "Data preparation layer - cleansing, normalization, integration"
+        managed_access: true
+        
+        # Logical groupings within prepare layer
+        sub_schemas:
+          - name: "staging"
+            comment: "Temporary staging tables for transformations"
+            transient: true
+            
+          - name: "cleansed"
+            comment: "Data quality applied, standardized formats"
+            
+          - name: "integrated"
+            comment: "Cross-source integrated data"
+            
+          - name: "history"
+            comment: "Historical tracking and SCD implementation"
+      
+      # Layer 3: ANALYSIS - Business-ready analytics
+      analysis:
+        name: "analysis"
+        comment: "Analytics layer - business logic, metrics, reporting"
+        managed_access: true
+        
+        # Business-oriented schemas
+        sub_schemas:
+          - name: "dimensions"
+            comment: "Dimension tables for star schema"
+            
+          - name: "facts"
+            comment: "Fact tables for star schema"
+            
+          - name: "metrics"
+            comment: "Pre-calculated KPIs and metrics"
+            
+          - name: "reports"
+            comment: "Report-specific views and tables"
+      
+      # Utility schemas
+      admin:
+        name: "admin"
+        comment: "Administrative tables and monitoring"
+        managed_access: true
+        
+      sandbox:
+        name: "sandbox_{user}"
+        comment: "Personal sandbox for analysts"
+        managed_access: false
+        user_specific: true
+
+  # Optional: Separate databases for larger deployments
+  raw_db:
+    name: "{env}_{project}_raw_db"
+    comment: "Dedicated database for raw data ingestion"
+    enabled: false  # Set to true for multi-database approach
+    data_retention_time_in_days: 
+      dev: 1
+      staging: 3
+      prod: 30
+    
+    schemas:
+      landing:
+        name: "landing"
+        comment: "Initial landing zone"
+        
+      archive:
+        name: "archive"
+        comment: "Archived raw data"
+        data_retention_time_in_days: 365
+
+# Schema naming patterns for dynamic creation
+schema_patterns:
+  source_system: "{source}_{extraction_method}"  # e.g., SALESFORCE_FIVETRAN
+  business_domain: "{domain}_{process}"          # e.g., CUSTOMER_INTEGRATION
+  analytics: "{function}_{type}"                 # e.g., SALES_METRICS
+
+# Default grants for each layer
+layer_grants:
+  raw:
+    read: 
+      - "{env}_{project}_transformer"
+      - "{env}_{project}_data_engineer"
+    write:
+      - "{env}_{project}_loader"
+      - "{env}_{project}_fivetran_loader"
+      - "{env}_{project}_data_engineer"
+  
+  prepare:
+    read:
+      - "{env}_{project}_analyst"
+      - "{env}_{project}_reporter"
+      - "{env}_{project}_data_scientist"
+    write:
+      - "{env}_{project}_transformer"
+      - "{env}_{project}_dbt_transformer"
+      - "{env}_{project}_data_engineer"
+  
+  analysis:
+    read:
+      - "{env}_{project}_analyst"
+      - "{env}_{project}_reporter"
+      - "{env}_{project}_viewer"
+      - "{env}_{project}_bi_tool"
+    write:
+      - "{env}_{project}_transformer"
+      - "{env}_{project}_dbt_transformer"
+      - "{env}_{project}_data_engineer" 

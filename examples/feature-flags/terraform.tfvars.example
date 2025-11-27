@@ -54,8 +54,68 @@ dev_team_emails  = ["dev-team@yourcompany.com"]
 # ADVANCED FEATURES
 # =============================================================================
 
+# Enable automatic classification (Enterprise Edition)
+enable_auto_classification = false
+
+# Enable RSA key-pair authentication for service users
+enable_key_pair_auth = false
+
+# Enable Personal Access Token (PAT) creation
+enable_pat_tokens = false
+
+# Enable authentication policies for enhanced security
+enable_authentication_policies = false
+
+# Enable external OAuth integrations for workload identity federation
+enable_external_oauth = false
+
 # Enable Cortex AI features (requires appropriate Snowflake edition)
 enable_cortex_ai = false
+
+# =============================================================================
+# SERVICE USERS WITH KEY-PAIR AUTHENTICATION
+# =============================================================================
+
+# Example service users (uncomment and configure as needed)
+# service_users = {
+#   "TERRAFORM_SERVICE" = {
+#     comment           = "Terraform automation service user"
+#     default_role      = "SYSADMIN"
+#     default_warehouse = "TERRAFORM_WH"
+#     email            = "terraform@company.com"
+#     display_name     = "Terraform Service Account"
+#     # rsa_public_key   = "your_base64_encoded_public_key_here"
+#     days_to_expiry   = 365
+#   }
+#   "DBT_SERVICE" = {
+#     comment           = "dbt transformation service user"
+#     default_role      = "TRANSFORMER_ROLE"
+#     default_warehouse = "DBT_WH"
+#     email            = "dbt@company.com"
+#     display_name     = "dbt Service Account"
+#     # rsa_public_key   = "your_base64_encoded_public_key_here"
+#   }
+# }
+
+# =============================================================================
+# PERSONAL ACCESS TOKENS
+# =============================================================================
+
+# Example PAT tokens (uncomment and configure as needed)
+# pat_tokens = {
+#   "terraform_automation_token" = {
+#     user_name         = "TERRAFORM_SERVICE"
+#     comment          = "Token for Terraform automation"
+#     days_to_expiry   = 90
+#     role_restriction = ["SYSADMIN", "SECURITYADMIN"]
+#   }
+#   "dbt_ci_token" = {
+#     user_name         = "DBT_SERVICE"
+#     comment          = "Token for dbt CI/CD pipeline"
+#     days_to_expiry   = 30
+#     role_restriction = ["TRANSFORMER_ROLE"]
+#   }
+# }
 
 # =============================================================================
 # EXAMPLE CONFIGURATIONS FOR DIFFERENT USE CASES

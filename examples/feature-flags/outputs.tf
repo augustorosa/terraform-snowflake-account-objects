@@ -141,7 +141,7 @@ output "next_steps" {
       "4. Enable Cortex AI features if you have the appropriate Snowflake edition",
       "5. Create sample data to test the 3-layer architecture",
       "6. Set up dbt or other transformation tools to use the PREPARE layer",
-      "7. Connect BI tools to the ANALYZE layer"
+      "7. Connect BI tools to the ANALYSIS layer"
     ] : []
     
     minimal_stack = var.deploy_minimal_stack ? [
@@ -155,7 +155,7 @@ output "next_steps" {
       "1. Test the 3-layer architecture with sample data",
       "2. Load data into the RAW layer",
       "3. Create transformations for the PREPARE layer",
-      "4. Build analytics views in the ANALYZE layer",
+      "4. Build analytics views in the ANALYSIS layer",
       "5. Consider adding warehouses next with enable_warehouses = true"
     ] : []
     

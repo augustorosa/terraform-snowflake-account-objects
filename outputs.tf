@@ -2,17 +2,36 @@
 # Comprehensive single module with feature flags
 
 # =============================================================================
+# CENTRAL SETTINGS DATABASE OUTPUTS
+# =============================================================================
+
+output "central_settings_database" {
+  description = "Central settings database details"
+  value = var.enable_central_settings_db ? {
+    name    = snowflake_database.central_settings[0].name
+    comment = snowflake_database.central_settings[0].comment
+    schemas = {
+      network    = var.enable_network_policies ? snowflake_schema.network_schema[0].name : null
+      governance = snowflake_schema.governance_schema[0].name
+      security   = snowflake_schema.security_schema[0].name
+      audit      = snowflake_schema.audit_schema[0].name
+      tags       = var.enable_tagging && var.use_central_db_for_tags ? snowflake_schema.tags_schema[0].name : null
+    }
+  } : null
+}
+
+# =============================================================================
 # TAGGING OUTPUTS
 # =============================================================================
 
 output "tag_database_name" {
   description = "Name of the tag database (if created)"
-  value       = var.enable_tagging && var.create_tag_schema ? snowflake_database.tag_database[0].name : null
+  value       = var.enable_tagging && var.create_tag_schema ? local.tag_database : null
 }
 
 output "tag_schema_name" {
   description = "Name of the tag schema (if created)"
-  value       = var.enable_tagging && var.create_tag_schema ? snowflake_schema.tag_schema[0].name : null
+  value       = var.enable_tagging && var.create_tag_schema ? local.tag_schema : null
 }
 
 output "tags_created" {
@@ -21,35 +40,59 @@ output "tags_created" {
     governance = {
       for tag_name, tag in snowflake_tag.governance_tags :
       tag_name => {
-        id           = tag.id
-        name         = tag.name
-        database     = tag.database
-        schema       = tag.schema
+        id             = tag.id
+        name           = tag.name
+        fully_qualified_name = tag.fully_qualified_name
+        database       = tag.database
+        schema         = tag.schema
         allowed_values = tag.allowed_values
-        comment      = tag.comment
+        comment        = tag.comment
       }
     }
     operational = {
       for tag_name, tag in snowflake_tag.operational_tags :
       tag_name => {
-        id       = tag.id
-        name     = tag.name
-        database = tag.database
-        schema   = tag.schema
-        comment  = tag.comment
+        id             = tag.id
+        name           = tag.name
+        fully_qualified_name = tag.fully_qualified_name
+        database       = tag.database
+        schema         = tag.schema
+        comment        = tag.comment
       }
     }
     technical = {
       for tag_name, tag in snowflake_tag.technical_tags :
       tag_name => {
-        id       = tag.id
-        name     = tag.name
-        database = tag.database
-        schema   = tag.schema
+        id             = tag.id
+        name           = tag.name
+        fully_qualified_name = tag.fully_qualified_name
+        database       = tag.database
+        schema         = tag.schema
         comment  = tag.comment
       }
     }
   } : null
+}
+
+output "tag_associations_summary" {
+  description = "Summary of tag associations applied to resources"
+  value = var.enable_tagging && var.auto_apply_tags && var.create_tag_schema ? {
+    databases_tagged = var.enable_databases ? length(var.databases) : 0
+    warehouses_tagged = var.enable_warehouses ? length(var.warehouses) : 0
+    schemas_tagged = var.enable_databases ? length(local.all_schemas) : 0
+    roles_tagged = var.enable_rbac && var.create_default_roles ? 3 : 0
+    service_users_tagged = var.enable_key_pair_auth ? length(var.service_users) : 0
+    central_db_tagged = var.enable_central_settings_db ? 1 : 0
+    tags_applied = [
+      "environment",
+      "project", 
+      "terraform_managed",
+      "module_version",
+      "data_classification"
+    ]
+  } : {
+    message = "Auto-tagging is disabled. Set auto_apply_tags = true to enable."
+  }
 }
 
 # =============================================================================
@@ -316,6 +359,198 @@ output "resource_monitors" {
       notify_triggers = monitor.notify_triggers
     }
   } : {}
+}
+
+# =============================================================================
+# AUTOMATIC CLASSIFICATION OUTPUTS
+# =============================================================================
+
+output "classification_enabled" {
+  description = "Whether automatic classification is enabled"
+  value       = local.classification_enabled
+}
+
+output "classification_profile_name" {
+  description = "Name of the classification profile (if enabled)"
+  value       = local.classification_profile_name
+}
+
+output "classification_setup_commands" {
+  description = "SQL commands for setting up automatic classification (Enterprise Edition required)"
+  value = local.classification_enabled ? [
+    "-- Step 1: Create Classification Profile",
+    "CREATE OR REPLACE SNOWFLAKE.DATA_PRIVACY.CLASSIFICATION_PROFILE ${local.classification_profile_name}({'minimum_object_age_for_classification_days': ${var.classification_config.minimum_object_age_days}, 'maximum_classification_validity_days': ${var.classification_config.maximum_validity_days}, 'auto_tag': ${var.classification_config.auto_tag ? "true" : "false"}});",
+    "",
+    "-- Step 2: Assign Profile to Schema (replace with your database and schema)",
+    "ALTER SCHEMA your_database.your_schema SET CLASSIFICATION_PROFILE = '${local.classification_profile_name}';",
+    "",
+    "-- Step 3: Test Classification on a Table (optional)",
+    "CALL SYSTEM$$CLASSIFY('your_database.your_schema.your_table', '${local.classification_profile_name}');",
+    "",
+    "-- Step 4: View Results",
+    "SELECT SYSTEM$$GET_CLASSIFICATION_RESULT('your_database.your_schema.your_table');",
+    "",
+    "-- More info: https://docs.snowflake.com/en/user-guide/classify-auto"
+  ] : ["Automatic classification is not enabled. Set enable_auto_classification = true to enable."]
+}
+
+output "classification_instructions" {
+  description = "Instructions for setting up automatic classification (Enterprise Edition required)"
+  value       = local.classification_enabled ? "Automatic classification is enabled. Run the classification SQL commands provided in classification_sql_commands output." : "Automatic classification is not enabled. Set enable_auto_classification = true to enable."
+}
+
+# =============================================================================
+# AUTHENTICATION POLICIES OUTPUTS
+# =============================================================================
+
+output "authentication_policies" {
+  description = "Created authentication policies with their configurations"
+  value = {
+    for name, policy in snowflake_authentication_policy.auth_policies : name => {
+      id                        = policy.id
+      name                      = policy.name
+      authentication_methods    = policy.authentication_methods
+      mfa_authentication_methods = policy.mfa_authentication_methods
+      mfa_enrollment           = policy.mfa_enrollment
+      client_types             = policy.client_types
+    }
+  }
+}
+
+# =============================================================================
+# EXTERNAL OAUTH INTEGRATIONS OUTPUTS
+# =============================================================================
+
+output "external_oauth_integrations" {
+  description = "Created external OAuth integrations for workload identity federation"
+  value = {
+    for name, integration in snowflake_external_oauth_integration.oauth_integrations : name => {
+      id                  = integration.id
+      name                = integration.name
+      type                = integration.type
+      enabled             = integration.enabled
+      external_oauth_type = integration.external_oauth_type
+      external_oauth_issuer = integration.external_oauth_issuer
+    }
+  }
+  sensitive = false
+}
+
+output "workload_identity_setup_guide" {
+  description = "Guide for setting up workload identity federation"
+  value = var.enable_external_oauth ? "External OAuth integrations enabled. Configure your identity provider to use the created integrations for secure, credential-less authentication." : "External OAuth integrations are disabled. Enable with enable_external_oauth = true"
+}
+
+# =============================================================================
+# KEY-PAIR AUTHENTICATION OUTPUTS
+# =============================================================================
+
+output "service_users" {
+  description = "Created service users with their details"
+  value = {
+    for name, user in snowflake_service_user.service_users : name => {
+      id               = user.id
+      name             = user.name
+      login_name       = user.login_name
+      display_name     = user.display_name
+      default_role     = user.default_role
+      default_warehouse = user.default_warehouse
+      disabled         = user.disabled
+      has_rsa_public_key   = user.rsa_public_key != null
+      has_rsa_public_key_2 = user.rsa_public_key_2 != null
+      days_to_expiry   = user.days_to_expiry
+    }
+  }
+}
+
+output "key_generation_function" {
+  description = "Name of the key generation function for creating RSA key pairs"
+  value       = var.enable_key_pair_auth ? "${local.base_prefix}_GENERATE_KEY_PAIR_UDTF" : null
+}
+
+output "key_generation_sql" {
+  description = "SQL command to generate RSA key pairs using the Snowpark UDTF"
+  value = var.enable_key_pair_auth ? "SELECT encrypted_pem_private_key, pem_private_key, pem_public_key, passphrase, private_key, public_key FROM TABLE(${local.base_prefix}_GENERATE_KEY_PAIR_UDTF('YourPassphrase'));" : null
+}
+
+# =============================================================================
+# PAT TOKEN OUTPUTS
+# =============================================================================
+
+output "pat_tokens" {
+  description = "Created PAT tokens with their metadata"
+  value = {
+    for name, token in snowflake_user_programmatic_access_token.pat_tokens : name => {
+      id                    = token.id
+      name                  = token.name
+      user                  = token.user
+      days_to_expiry        = token.days_to_expiry
+      disabled              = token.disabled
+      role_restriction      = token.role_restriction
+    }
+  }
+  sensitive = true  # Marked sensitive to prevent exposure in logs
+}
+
+output "pat_token_values" {
+  description = "Actual PAT token values (SENSITIVE - handle with care)"
+  value = {
+    for name, token in snowflake_user_programmatic_access_token.pat_tokens : name => {
+      token = token.token
+    }
+  }
+  sensitive = true
+}
+
+output "authentication_setup_guide" {
+  description = "Complete guide for setting up authentication with this module"
+  value = var.enable_key_pair_auth || var.enable_pat_tokens ? "Authentication features enabled. See key_generation_sql and pat_tokens outputs for details." : "Authentication features are disabled. Enable with enable_key_pair_auth = true or enable_pat_tokens = true"
+}
+
+# =============================================================================
+# NETWORK POLICY OUTPUTS
+# =============================================================================
+
+output "network_rules" {
+  description = "Created network rules for IP-based access control"
+  value = {
+    for name, rule in snowflake_network_rule.network_rules : name => {
+      id         = rule.id
+      name       = rule.name
+      type       = rule.type
+      value_list = rule.value_list
+      mode       = rule.mode
+    }
+  }
+}
+
+output "network_policies" {
+  description = "Created network policies with their configurations"  
+  value = {
+    for name, policy in snowflake_network_policy.network_policies : name => {
+      id                        = policy.id
+      name                      = policy.name
+      allowed_ip_list          = policy.allowed_ip_list
+      blocked_ip_list          = policy.blocked_ip_list
+      allowed_network_rule_list = policy.allowed_network_rule_list
+      blocked_network_rule_list = policy.blocked_network_rule_list
+    }
+  }
+}
+
+output "default_network_policy" {
+  description = "Default network policy details (if created)"
+  value = var.enable_network_policies && var.default_network_policy.enabled ? {
+    id              = snowflake_network_policy.default_policy[0].id
+    name            = snowflake_network_policy.default_policy[0].name
+    allowed_ip_list = snowflake_network_policy.default_policy[0].allowed_ip_list
+    blocked_ip_list = snowflake_network_policy.default_policy[0].blocked_ip_list
+  } : null
+}
+
+output "network_policy_setup_guide" {
+  description = "Guide for setting up network policies for PAT tokens"
+  value = var.enable_network_policies ? "Network policies enabled. PAT tokens can now be created with network policy restrictions. See network_policies output for details." : "Network policies are disabled. Enable with enable_network_policies = true"
 }
 
 # =============================================================================

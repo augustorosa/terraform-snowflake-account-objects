@@ -14,8 +14,8 @@ This example demonstrates a complete, production-ready implementation of the Sno
 - ✅ Analytics database with 3-layer architecture:
   - **RAW**: Unprocessed source data
   - **PREPARE**: Cleaned and transformed data  
-  - **ANALYZE**: Business-ready data for reporting
-- ✅ Sample tables in RAW and ANALYZE layers
+  - **ANALYSIS**: Business-ready data for reporting
+- ✅ Sample tables in RAW and ANALYSIS layers
 
 ### 3. **Compute Resources**
 - ✅ ETL warehouse (X-SMALL, auto-suspend 60s)
@@ -77,7 +77,7 @@ analytics_dev_READER_ROLE     # Read-only access
 analytics_dev_WRITER_ROLE     # Read/write access (inherits READER)
 analytics_dev_ADMIN_ROLE      # Full access (inherits WRITER)
 analytics_dev_ALL_DATA_ROLE   # Access to all data layers
-analytics_dev_ANALYZE_ONLY_ROLE # Access to ANALYZE layer only
+analytics_dev_ANALYSIS_ONLY_ROLE # Access to ANALYSIS layer only
 analytics_dev_INGEST_ONLY_ROLE  # Access to RAW layer only
 ```
 
@@ -86,7 +86,7 @@ analytics_dev_INGEST_ONLY_ROLE  # Access to RAW layer only
 analytics_dev_analytics (Database)
 ├── RAW (Schema) - Raw data layer
 ├── PREPARE (Schema) - Prepared data layer
-└── ANALYZE (Schema) - Analytics data layer
+└── ANALYSIS (Schema) - Analytics data layer
 ```
 
 ### **Warehouses**
@@ -117,7 +117,7 @@ GRANT ROLE analytics_dev_ADMIN_ROLE TO USER ADMIN_DEV;
 -- Connect as ANALYST_DEV
 USE ROLE analytics_dev_READER_ROLE;
 USE DATABASE analytics_dev_analytics;
-USE SCHEMA ANALYZE;
+USE SCHEMA ANALYSIS;
 SELECT * FROM SAMPLE_ANALYTICS_DATA LIMIT 10;
 ```
 
@@ -128,8 +128,8 @@ USE ROLE analytics_dev_WRITER_ROLE;
 USE DATABASE analytics_dev_analytics;
 USE SCHEMA RAW;
 SELECT * FROM SAMPLE_RAW_DATA LIMIT 10;
--- Should also have access to ANALYZE layer (inherits READER)
-USE SCHEMA ANALYZE;
+-- Should also have access to ANALYSIS layer (inherits READER)
+USE SCHEMA ANALYSIS;
 SELECT * FROM SAMPLE_ANALYTICS_DATA LIMIT 10;
 ```
 
@@ -199,7 +199,7 @@ project_name = "customer-analytics"
 - Clear permission escalation
 
 ### **Data Layer Access**
-- **READER**: Access to ANALYZE layer only
+- **READER**: Access to ANALYSIS layer only
 - **WRITER**: Access to all layers (inherits READER)
 - **ADMIN**: Full access to everything
 
@@ -243,6 +243,6 @@ terraform destroy
 ## 🔗 Related Documentation
 
 - [Module Documentation](../../README.md)
-- [RBAC Architecture](../../requirements/RBAC_ARCHITECTURE.md)
-- [Technical Requirements](../../requirements/TECHNICAL_REQUIREMENTS.md)
-- [Integration Requirements](../../requirements/INTEGRATION_REQUIREMENTS.md) 
+- [RBAC Architecture](../../docs/RBAC_ARCHITECTURE.md)
+- [Technical Requirements](../../docs/TECHNICAL_REQUIREMENTS.md)
+- [Integration Requirements](../../docs/INTEGRATION_REQUIREMENTS.md) 

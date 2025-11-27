@@ -12,12 +12,18 @@
 # =============================================================================
 
 variable "project_name" {
-  description = "Name of the project"
+  description = "Name of the project (also used as central database name)"
   type        = string
   validation {
     condition     = can(regex("^[a-zA-Z][a-zA-Z0-9_]{0,29}$", var.project_name))
     error_message = "Project name must start with a letter, contain only letters, numbers, and underscores, and be 1-30 characters long."
   }
+}
+
+variable "module_version" {
+  description = "Version of the module (used for tagging resources)"
+  type        = string
+  default     = "0.6.0"
 }
 
 variable "environment" {
@@ -70,9 +76,61 @@ variable "enable_resource_monitors" {
 }
 
 variable "enable_network_policies" {
-  description = "Enable network policies for security"
+  description = "Enable network policies for IP-based security control"
   type        = bool
   default     = false
+}
+
+variable "enable_auto_classification" {
+  description = "Enable automatic sensitive data classification (requires Enterprise Edition)"
+  type        = bool
+  default     = false
+}
+
+variable "enable_key_pair_auth" {
+  description = "Enable RSA key-pair authentication for service users"
+  type        = bool
+  default     = false
+}
+
+variable "enable_pat_tokens" {
+  description = "Enable Personal Access Token (PAT) creation for service users"
+  type        = bool
+  default     = false
+}
+
+variable "enable_authentication_policies" {
+  description = "Enable authentication policies for enhanced security controls"
+  type        = bool
+  default     = false
+}
+
+variable "enable_external_oauth" {
+  description = "Enable external OAuth integrations for workload identity federation"
+  type        = bool
+  default     = false
+}
+
+# =============================================================================
+# CENTRAL SETTINGS DATABASE
+# =============================================================================
+
+variable "enable_central_settings_db" {
+  description = "Enable central settings database for network rules, governance, and security configurations"
+  type        = bool
+  default     = true
+}
+
+variable "central_settings_data_retention_days" {
+  description = "Data retention days for central settings database"
+  type        = number
+  default     = 90
+}
+
+variable "use_central_db_for_tags" {
+  description = "Use central settings database for tag definitions instead of legacy tag database"
+  type        = bool
+  default     = false  # Set to true to migrate tags to central database
 }
 
 # =============================================================================
@@ -108,6 +166,12 @@ variable "custom_data_access_roles" {
 
 variable "create_tag_schema" {
   description = "Create tag database and schema for resource tagging"
+  type        = bool
+  default     = true
+}
+
+variable "auto_apply_tags" {
+  description = "Automatically apply governance and technical tags to all resources"
   type        = bool
   default     = true
 }
@@ -173,9 +237,9 @@ variable "databases" {
     enable_3_layer_architecture = optional(bool, true)
     prepare_layer_managed_access = optional(bool, false)
     prepare_layer_transient     = optional(bool, false)
-    analyze_layer_managed_access = optional(bool, true)
+    analysis_layer_managed_access = optional(bool, true)
     
-    # Custom schemas beyond RAW, PREPARE, ANALYZE
+    # Custom schemas beyond RAW, PREPARE, ANALYSIS
     custom_schemas = optional(map(object({
       name                   = string
       comment               = optional(string, "")
@@ -224,6 +288,25 @@ variable "warehouses" {
     query_acceleration_max_scale_factor = optional(number, 8)
   }))
   default = {}
+
+  validation {
+    condition = alltrue([
+      for k, v in var.warehouses : contains([
+        "X-SMALL", "XSMALL", "SMALL", "MEDIUM", "LARGE", 
+        "X-LARGE", "XLARGE", "2X-LARGE", "2XLARGE", 
+        "3X-LARGE", "3XLARGE", "4X-LARGE", "4XLARGE",
+        "5X-LARGE", "5XLARGE", "6X-LARGE", "6XLARGE"
+      ], upper(v.size))
+    ])
+    error_message = "Warehouse size must be a valid Snowflake warehouse size (X-SMALL, SMALL, MEDIUM, LARGE, X-LARGE, 2X-LARGE, etc.)."
+  }
+
+  validation {
+    condition = alltrue([
+      for k, v in var.warehouses : contains(["STANDARD", "ECONOMY"], upper(v.scaling_policy))
+    ])
+    error_message = "Scaling policy must be either STANDARD or ECONOMY."
+  }
 }
 
 # =============================================================================
@@ -299,6 +382,32 @@ variable "resource_monitors" {
 # CORTEX AI FEATURES
 # =============================================================================
 
+# =============================================================================
+# AUTOMATIC CLASSIFICATION CONFIGURATION
+# =============================================================================
+
+variable "classification_config" {
+  description = "Configuration for automatic sensitive data classification"
+  type = object({
+    minimum_object_age_days     = optional(number, 0)
+    maximum_validity_days       = optional(number, 30)
+    auto_tag                   = optional(bool, true)
+    enable_system_tags         = optional(bool, true)
+    custom_tag_mappings = optional(list(object({
+      tag_name            = string
+      tag_value           = string
+      semantic_categories = list(string)
+    })), [])
+  })
+  default = {
+    minimum_object_age_days = 0
+    maximum_validity_days   = 30
+    auto_tag               = true
+    enable_system_tags     = true
+    custom_tag_mappings    = []
+  }
+}
+
 variable "cortex_ai_features" {
   description = "Cortex AI features configuration (disabled by default)"
   type = object({
@@ -313,11 +422,134 @@ variable "cortex_ai_features" {
       auto_summarize         = optional(bool, false)
       include_usage_patterns = optional(bool, false)
     }), {})
-    data_classification = optional(object({
-      enabled              = optional(bool, false)
-      auto_detect_pii      = optional(bool, false)
-      confidence_threshold = optional(number, 0.8)
-    }), {})
+  })
+  default = {
+    enabled = false
+  }
+} 
+
+# =============================================================================
+# KEY-PAIR AUTHENTICATION CONFIGURATION
+# =============================================================================
+
+variable "service_users" {
+  description = "Service users to create with optional RSA key-pair authentication"
+  type = map(object({
+    comment                = optional(string, "Service user managed by Terraform")
+    default_role          = optional(string, "PUBLIC")
+    default_warehouse     = optional(string)
+    disabled              = optional(bool, false)
+    display_name          = optional(string)
+    email                 = optional(string)
+    first_name            = optional(string)
+    last_name             = optional(string)
+    login_name            = optional(string)
+    must_change_password  = optional(bool, false)
+    rsa_public_key        = optional(string, null)  # Base64 encoded public key
+    rsa_public_key_2      = optional(string, null)  # For key rotation
+    days_to_expiry        = optional(number, null)  # Account expiry
+  }))
+  default = {}
+  
+  validation {
+    condition = alltrue([
+      for user_name, user in var.service_users : 
+      can(regex("^[A-Z0-9_]+$", user_name))
+    ])
+    error_message = "Service user names must contain only uppercase letters, numbers, and underscores."
+  }
+}
+
+# =============================================================================
+# AUTHENTICATION POLICIES CONFIGURATION
+# =============================================================================
+
+variable "authentication_policies" {
+  description = "Authentication policies for enhanced security controls"
+  type = map(object({
+    comment                    = optional(string, "Authentication policy managed by Terraform")
+    authentication_methods     = optional(list(string), ["PASSWORD"])
+    mfa_authentication_methods = optional(list(string), ["PASSWORD"])
+    mfa_enrollment            = optional(string, "OPTIONAL")  # REQUIRED, OPTIONAL
+    client_types              = optional(list(string), ["SNOWFLAKE_UI", "DRIVERS", "SNOWSQL"])
+  }))
+  default = {}
+}
+
+# =============================================================================
+# EXTERNAL OAUTH CONFIGURATION
+# =============================================================================
+
+variable "external_oauth_integrations" {
+  description = "External OAuth integrations for workload identity federation"
+  type = map(object({
+    comment                     = optional(string, "External OAuth integration managed by Terraform")
+    type                       = string  # EXTERNAL_OAUTH
+    enabled                    = optional(bool, true)
+    external_oauth_type        = string  # AZURE, OKTA, PING_IDENTITY, CUSTOM
+    external_oauth_issuer      = string
+    external_oauth_jws_keys_url = optional(string)
+    external_oauth_audience_list = optional(list(string))
+    external_oauth_token_user_mapping_claim = optional(string, "sub")
+    external_oauth_snowflake_user_mapping_attribute = optional(string, "LOGIN_NAME")
+    external_oauth_scope_delimiter = optional(string, " ")
+  }))
+  default = {}
+}
+
+# =============================================================================
+# PAT TOKEN CONFIGURATION
+# =============================================================================
+
+variable "pat_tokens" {
+  description = "Personal Access Tokens to create for service users"
+  type = map(object({
+    user_name                                = string
+    comment                                 = optional(string, "PAT token managed by Terraform")
+    days_to_expiry                         = optional(number, 90)
+    disabled                               = optional(bool, false)
+    role_restriction                       = optional(list(string), [])
+    mins_to_bypass_network_policy_requirement = optional(number, null)
+    expire_rotated_token_after_hours       = optional(number, 24)
+  }))
+  default = {}
+}
+
+# =============================================================================
+# NETWORK POLICY CONFIGURATION
+# =============================================================================
+
+variable "network_policies" {
+  description = "Network policies to create for IP-based access control"
+  type = map(object({
+    comment           = optional(string, "Network policy managed by Terraform")
+    allowed_ip_list   = optional(list(string), [])
+    blocked_ip_list   = optional(list(string), [])
+    allowed_network_rule_list = optional(list(string), [])
+    blocked_network_rule_list = optional(list(string), [])
+  }))
+  default = {}
+}
+
+variable "network_rules" {
+  description = "Network rules to define IP ranges and patterns"
+  type = map(object({
+    comment    = optional(string, "Network rule managed by Terraform")
+    type       = string # IPV4, IPV6, FQDN
+    value_list = list(string)
+    mode       = optional(string, "INGRESS") # INGRESS, EGRESS
+  }))
+  default = {}
+}
+
+variable "default_network_policy" {
+  description = "Default network policy configuration for basic IP restrictions"
+  type = object({
+    enabled             = optional(bool, false)
+    name               = optional(string, "DEFAULT_ACCESS_POLICY")
+    comment            = optional(string, "Default network policy - allows all by default")
+    allowed_ip_list    = optional(list(string), ["0.0.0.0/0"])
+    blocked_ip_list    = optional(list(string), [])
   })
   default = {
     enabled = false

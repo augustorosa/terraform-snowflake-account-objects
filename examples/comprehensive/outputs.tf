@@ -32,9 +32,9 @@ output "data_schemas" {
       name    = snowflake_schema.prepare_schema.name
       comment = snowflake_schema.prepare_schema.comment
     }
-    analyze = {
-      name    = snowflake_schema.analyze_schema.name
-      comment = snowflake_schema.analyze_schema.comment
+    analysis = {
+      name    = snowflake_schema.analysis_schema.name
+      comment = snowflake_schema.analysis_schema.comment
     }
   }
 }
@@ -87,9 +87,9 @@ output "sample_tables" {
       comment = snowflake_table.sample_raw_table.comment
     }
     analytics_data = {
-      name    = snowflake_table.sample_analyze_table.name
-      schema  = snowflake_table.sample_analyze_table.schema
-      comment = snowflake_table.sample_analyze_table.comment
+      name    = snowflake_table.sample_analysis_table.name
+      schema  = snowflake_table.sample_analysis_table.schema
+      comment = snowflake_table.sample_analysis_table.comment
     }
   }
 }
@@ -101,7 +101,7 @@ output "role_usage_examples" {
     analyst_role = {
       role_name = module.snowflake_account_objects.functional_roles["READER"].name
       user_name = snowflake_user.analyst_user.name
-      permissions = "Read-only access to ANALYZE layer"
+      permissions = "Read-only access to ANALYSIS layer"
       sql_command = "GRANT ROLE ${module.snowflake_account_objects.functional_roles["READER"].name} TO USER ${snowflake_user.analyst_user.name};"
     }
     engineer_role = {
@@ -141,7 +141,7 @@ output "testing_commands" {
       "GRANT ROLE ${module.snowflake_account_objects.functional_roles["WRITER"].name} TO USER ${snowflake_user.engineer_user.name};",
       "GRANT ROLE ${module.snowflake_account_objects.functional_roles["ADMIN"].name} TO USER ${snowflake_user.admin_user.name};"
     ]
-    test_analyst_access = "USE ROLE ${module.snowflake_account_objects.functional_roles["READER"].name}; USE DATABASE ${snowflake_database.analytics_db.name}; USE SCHEMA ${snowflake_schema.analyze_schema.name}; SELECT * FROM ${snowflake_table.sample_analyze_table.name} LIMIT 10;"
+    test_analyst_access = "USE ROLE ${module.snowflake_account_objects.functional_roles["READER"].name}; USE DATABASE ${snowflake_database.analytics_db.name}; USE SCHEMA ${snowflake_schema.analysis_schema.name}; SELECT * FROM ${snowflake_table.sample_analysis_table.name} LIMIT 10;"
     test_engineer_access = "USE ROLE ${module.snowflake_account_objects.functional_roles["WRITER"].name}; USE DATABASE ${snowflake_database.analytics_db.name}; USE SCHEMA ${snowflake_schema.raw_schema.name}; SELECT * FROM ${snowflake_table.sample_raw_table.name} LIMIT 10;"
     test_admin_access = "USE ROLE ${module.snowflake_account_objects.functional_roles["ADMIN"].name}; USE DATABASE ${snowflake_database.analytics_db.name}; SHOW SCHEMAS;"
     check_role_hierarchy = "SHOW GRANTS TO ROLE ${module.snowflake_account_objects.functional_roles["ADMIN"].name};"

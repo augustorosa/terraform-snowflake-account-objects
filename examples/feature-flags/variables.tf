@@ -105,10 +105,85 @@ variable "dev_team_emails" {
 # FEATURE TOGGLES
 # =============================================================================
 
+variable "enable_resource_monitors" {
+  description = "Enable resource monitors for cost control"
+  type        = bool
+  default     = false
+}
+
+variable "enable_auto_classification" {
+  description = "Enable automatic sensitive data classification (requires Enterprise Edition)"
+  type        = bool
+  default     = false
+}
+
+variable "enable_key_pair_auth" {
+  description = "Enable RSA key-pair authentication for service users"
+  type        = bool
+  default     = false
+}
+
+variable "enable_pat_tokens" {
+  description = "Enable Personal Access Token (PAT) creation for service users"
+  type        = bool
+  default     = false
+}
+
+variable "enable_authentication_policies" {
+  description = "Enable authentication policies for enhanced security controls"
+  type        = bool
+  default     = false
+}
+
+variable "enable_external_oauth" {
+  description = "Enable external OAuth integrations for workload identity federation"
+  type        = bool
+  default     = false
+}
+
 variable "enable_cortex_ai" {
   description = "Enable Cortex AI features (requires appropriate Snowflake edition)"
   type        = bool
   default     = false
+}
+
+# =============================================================================
+# SERVICE USERS CONFIGURATION
+# =============================================================================
+
+variable "service_users" {
+  description = "Service users to create with optional RSA key-pair authentication"
+  type = map(object({
+    comment                = optional(string, "Service user managed by Terraform")
+    default_role          = optional(string, "PUBLIC")
+    default_warehouse     = optional(string)
+    disabled              = optional(bool, false)
+    display_name          = optional(string)
+    email                 = optional(string)
+    login_name            = optional(string)
+    rsa_public_key        = optional(string, null)  # Base64 encoded public key
+    rsa_public_key_2      = optional(string, null)  # For key rotation
+    days_to_expiry        = optional(number, null)  # Account expiry
+  }))
+  default = {}
+}
+
+# =============================================================================
+# PAT TOKEN CONFIGURATION
+# =============================================================================
+
+variable "pat_tokens" {
+  description = "Personal Access Tokens to create for service users"
+  type = map(object({
+    user_name                                = string
+    comment                                 = optional(string, "PAT token managed by Terraform")
+    days_to_expiry                         = optional(number, 90)
+    disabled                               = optional(bool, false)
+    role_restriction                       = optional(list(string), [])
+    mins_to_bypass_network_policy_requirement = optional(number, null)
+    expire_rotated_token_after_hours       = optional(number, 24)
+  }))
+  default = {}
 }
 
 variable "deploy_full_stack" {

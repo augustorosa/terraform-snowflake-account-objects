@@ -6,7 +6,7 @@ A comprehensive Terraform module for managing Snowflake account infrastructure w
 
 - 🏷️ **Auto-Tagging System**: Governance, operational, and technical tag automation
 - 👥 **RBAC Hierarchy**: Simplified role inheritance (READER → WRITER → ADMIN → SYSADMIN)
-- 🏗️ **3-Layer Architecture**: RAW → PREPARE → ANALYZE data layers
+- 🏗️ **3-Layer Architecture**: RAW → PREPARE → ANALYSIS data layers
 - 🎛️ **Feature Flags**: Enable only what you need with granular control
 - 🔒 **Security First**: No hardcoded passwords, key-pair authentication support
 - 🌐 **Multi-Environment**: Support for dev, staging, and prod environments
@@ -98,7 +98,7 @@ module "snowflake_account" {
 This module creates the following Snowflake resources:
 
 - **Roles**: Functional roles (READER, WRITER, ADMIN) and data access roles
-- **Databases**: With optional 3-layer architecture (RAW, PREPARE, ANALYZE)
+- **Databases**: With optional 3-layer architecture (RAW, PREPARE, ANALYSIS)
 - **Schemas**: Layer-specific schemas with proper access controls
 - **Tags**: Governance, operational, and technical tags
 - **Warehouses**: Configurable compute resources
@@ -115,7 +115,14 @@ This module creates the following Snowflake resources:
 | `enable_warehouses` | Create and manage warehouses | `false` |
 | `enable_data_loading` | Create stages, file formats, pipes | `false` |
 | `enable_resource_monitors` | Create resource monitors for cost control | `false` |
-| `enable_network_policies` | Create network policies (future) | `false` |
+| `enable_auto_classification` | Enable automatic sensitive data classification (Enterprise) | `false` |
+| `enable_key_pair_auth` | Enable RSA key-pair authentication for service users | `false` |
+| `enable_pat_tokens` | Enable Personal Access Token (PAT) creation | `false` |
+| `enable_authentication_policies` | Enable authentication policies for enhanced security | `false` |
+| `enable_external_oauth` | Enable external OAuth integrations for workload identity | `false` |
+| `enable_central_settings_db` | Enable central database for network, governance, security | `true` |
+| `auto_apply_tags` | Automatically apply governance and technical tags to all resources | `true` |
+| `enable_network_policies` | Create network policies for IP-based access control | `false` |
 
 ## 📝 **Inputs**
 
@@ -158,20 +165,45 @@ SYSADMIN
 
 **Data Access Roles** (granted to ADMIN):
 - `ALL_DATA_ROLE`: Access to all layers
-- `ANALYZE_ONLY_ROLE`: Business users (ANALYZE layer only)
+- `ANALYSIS_ONLY_ROLE`: Business users (ANALYSIS layer only)
 - `INGEST_ONLY_ROLE`: ETL tools (RAW layer only)
 
 ### 3-Layer Data Architecture
 
 ```
-RAW → PREPARE → ANALYZE
+RAW → PREPARE → ANALYSIS
 ```
 
 - **RAW**: Landing zone for source data (unmanaged access)
 - **PREPARE**: Data transformation layer (managed access)
-- **ANALYZE**: Business-ready analytics layer (managed access)
+- **ANALYSIS**: Business-ready analytics layer (managed access)
 
-### Auto-Tagging Schema
+### Central Settings Database
+
+The module creates a central database named `{PROJECT_NAME}` containing:
+
+| Schema | Purpose |
+|--------|---------|
+| `NETWORK` | Network rules and policies |
+| `GOVERNANCE` | Governance configurations |
+| `SECURITY` | Security policies and configurations |
+| `AUDIT` | Audit logs and compliance tracking |
+| `TAGS` | Tag definitions (optional, migrated from legacy) |
+
+### Auto-Tagging System
+
+When `auto_apply_tags = true` (default), the module automatically applies tags to all created resources:
+
+| Resource Type | Tags Applied |
+|--------------|--------------|
+| Databases | `environment`, `project`, `terraform_managed`, `module_version` |
+| Schemas | `environment`, `project`, `data_classification` (based on layer) |
+| Warehouses | `environment`, `project`, `terraform_managed` |
+| Roles | `environment`, `project`, `terraform_managed` |
+| Service Users | `environment`, `project`, `terraform_managed` |
+| Central Settings DB | `environment`, `project`, `terraform_managed`, `data_classification=RESTRICTED` |
+
+**Tag Categories:**
 
 **Governance Tags**: `ENVIRONMENT`, `PROJECT`, `OWNER`, `COST_CENTER`, `DATA_CLASSIFICATION`
 
@@ -179,11 +211,20 @@ RAW → PREPARE → ANALYZE
 
 **Technical Tags**: `VERSION`, `TERRAFORM_MANAGED`, `MODULE_VERSION`
 
+**Data Classification by Schema Layer:**
+- `RAW` → `INTERNAL`
+- `PREPARE` → `INTERNAL`  
+- `ANALYSIS` → `CONFIDENTIAL`
+- Central Settings → `RESTRICTED`
+
 ## 📚 **Examples**
 
-- [**Basic Example**](./examples/basic/) - Simple RBAC and tagging setup
-- [**Feature Flags Example**](./examples/feature-flags/) - Demonstrates all deployment scenarios
-- [**Comprehensive Example**](./examples/comprehensive/) - Full enterprise deployment
+| Example | Description | Use Case |
+|---------|-------------|----------|
+| [`basic/`](./examples/basic/) | Minimal setup with essential features | Getting started, proof of concept |
+| [`comprehensive/`](./examples/comprehensive/) | Full-featured deployment | Production environments |
+| [`feature-flags/`](./examples/feature-flags/) | Demonstrates all available features | Feature evaluation, testing |
+| [`security-focused/`](./examples/security-focused/) | **NEW** Provider 2.7.0 security features | Enterprise security, compliance |
 
 ## 🔒 **Security Considerations**
 
@@ -232,6 +273,21 @@ This module is built for Snowflake provider `~> 2.0` and handles all breaking ch
 ## 🤝 **Contributing**
 
 Contributions are welcome! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
+
+## 📚 **Documentation**
+
+For detailed technical documentation, architecture guides, and requirements:
+- [Architecture Documentation](./docs/ARCHITECTURE.md)
+- [RBAC Architecture](./docs/RBAC_ARCHITECTURE.md)
+- [Technical Requirements](./docs/TECHNICAL_REQUIREMENTS.md)
+- [Security Requirements](./docs/SECURITY_REQUIREMENTS.md)
+- [Implementation Status](./docs/IMPLEMENTATION_STATUS.md)
+- [Provider 2.7.0 Migration Guide](./docs/PROVIDER_2.7.0_MIGRATION.md)
+- [Provider 2.11.0 Updates](./docs/PROVIDER_2.11.0_UPDATES.md) ⭐ **NEW**
+
+## 🔮 **Future Enhancements**
+
+- [YAML Configuration Patterns](./docs/config-patterns/) - Future GitOps-style configuration approach
 
 ## 📄 **License**
 
