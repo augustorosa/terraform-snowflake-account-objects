@@ -24,17 +24,17 @@ run "test_valid_environment_dev" {
   }
 }
 
-run "test_valid_environment_staging" {
+run "test_valid_environment_qa" {
   command = plan
 
   variables {
     project_name = "testproject"
-    environment  = "staging"
+    environment  = "qa"
   }
 
   assert {
-    condition     = var.environment == "staging"
-    error_message = "Environment should be 'staging'"
+    condition     = var.environment == "qa"
+    error_message = "Environment should be 'qa'"
   }
 }
 

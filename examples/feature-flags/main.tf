@@ -58,21 +58,22 @@ module "full_stack" {
   create_default_roles = true
 
   # Custom roles beyond the default READER, WRITER, ADMIN
-  custom_functional_roles = {
+  custom_roles = {
     DATA_SCIENTIST = {
-      comment = "Role for data scientists with advanced analytics access"
+      comment      = "Role for data scientists with advanced analytics access"
+      inherit_from = "DEV_FEATURES_WRITER_ROLE"
     }
     ML_ENGINEER = {
-      comment = "Role for ML engineers with model deployment access"
+      comment      = "Role for ML engineers with model deployment access"
+      inherit_from = "DEV_FEATURES_WRITER_ROLE"
     }
-  }
-
-  custom_data_access_roles = {
     PII_DATA = {
-      comment = "Access to personally identifiable information"
+      comment      = "Access to personally identifiable information"
+      inherit_from = "DEV_FEATURES_ADMIN_ROLE"
     }
     FINANCIAL_DATA = {
-      comment = "Access to financial datasets"
+      comment      = "Access to financial datasets"
+      inherit_from = "DEV_FEATURES_ADMIN_ROLE"
     }
   }
 
