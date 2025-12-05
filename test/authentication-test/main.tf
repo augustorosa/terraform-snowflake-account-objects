@@ -3,7 +3,7 @@
 # =============================================================================
 # This configuration tests all authentication features:
 # - RSA key-pair authentication for service users
-# - Personal Access Token (PAT) creation  
+# - Personal Access Token (PAT) creation
 # - Network policies and rules
 # - Complete integration test
 
@@ -34,7 +34,7 @@ module "snowflake_auth_test" {
   enable_rbac              = true  # Need roles for testing
   enable_tagging           = true  # For proper resource organization
   enable_databases         = false # Not needed for auth testing
-  enable_warehouses        = false # Not needed for auth testing  
+  enable_warehouses        = false # Not needed for auth testing
   enable_data_loading      = false # Not needed for auth testing
   enable_resource_monitors = false # Not needed for auth testing
 
@@ -194,4 +194,4 @@ module "snowflake_auth_test" {
     created_by    = "auth_test_suite"
     expires_after = "30_days"
   }
-} 
+}

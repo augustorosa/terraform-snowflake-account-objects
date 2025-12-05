@@ -142,12 +142,12 @@ graph LR
     B --> D[Database Module]
     B --> E[Warehouse Module]
     B --> F[Data Loading Module]
-    
+
     C --> G[Snowflake Provider]
     D --> G
     E --> G
     F --> G
-    
+
     G --> H[Snowflake Account]
 ```
 
@@ -193,7 +193,7 @@ Custom Roles (Examples - add as needed):
 
 **Data Access Roles** (Granted to ADMIN):
 - **ALL_DATA_RL**: Access to RAW + PREPARE + ANALYSIS layers
-- **ANALYSIS_ONLY_RL**: Access to ANALYSIS layer only  
+- **ANALYSIS_ONLY_RL**: Access to ANALYSIS layer only
 - **INGEST_ONLY_RL**: Access to RAW layer only (for ETL tools)
 
 **Custom Roles** (Add as needed via `custom_roles` variable):
@@ -218,11 +218,11 @@ databases:
   raw:
     name: "{env}_{project}_raw_db"
     schemas: ["landing", "archive"]
-  
+
   prepare:
     name: "{env}_{project}_prepare_db"
     schemas: ["cleansed", "integrated", "staging"]
-  
+
   analyze:
     name: "{env}_{project}_analyze_db"
     schemas: ["dimensions", "facts", "reports"]
@@ -275,7 +275,7 @@ warehouses:
     auto_resume: true
     initially_suspended: true
     scaling_policy: "STANDARD"
-    
+
   transform:
     size: "SMALL"
     auto_suspend: 300
@@ -283,7 +283,7 @@ warehouses:
     min_cluster_count: 1
     max_cluster_count: 3
     scaling_policy: "ECONOMY"
-    
+
   analytics:
     size: "MEDIUM"
     auto_suspend: 600
@@ -330,9 +330,9 @@ network_policies:
   default:
     allowed_ips: ["0.0.0.0/0"]  # Restrict in production
     blocked_ips: []
-    
+
   production:
-    allowed_ips: 
+    allowed_ips:
       - "10.0.0.0/8"      # Internal network
       - "52.1.2.3/32"     # NAT Gateway
     blocked_ips: []
@@ -401,7 +401,7 @@ PROD_ACCOUNT
 {ENVIRONMENT}_{PROJECT}_{RESOURCE}_SUFFIX
 
 Database: {ENV}_{PROJECT}_DB
-Warehouse: {ENV}_{PROJECT}_{FUNCTION}_WH  
+Warehouse: {ENV}_{PROJECT}_{FUNCTION}_WH
 Role: {ENV}_{PROJECT}_{ROLE}_RL
 User: {ENV}_{PROJECT}_USER_{NAME}
 
@@ -421,4 +421,4 @@ tags:
   owner: ["data-team", "analytics-team", "platform-team"]
   cost-center: ["1001", "1002", "1003"]
   data-classification: ["public", "internal", "confidential", "restricted"]
-``` 
+```

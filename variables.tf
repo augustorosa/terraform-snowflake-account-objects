@@ -146,14 +146,14 @@ variable "create_default_roles" {
 variable "custom_roles" {
   description = <<-EOT
     Custom roles to create beyond the default simplified role hierarchy.
-    
+
     The module creates these 6 default roles per RBAC_ARCHITECTURE.md:
     - Functional: READER, WRITER, ADMIN (with proper inheritance chain)
     - Data Access: ALL_DATA, ANALYSIS_ONLY, INGEST_ONLY
-    
+
     Use this variable to add complex roles as needed:
     - Example: DEVELOPER, DATA_ENGINEER, ANALYST, DBT_TRANSFORMER, etc.
-    
+
     These custom roles can inherit from the default roles or system roles.
   EOT
   type = map(object({
@@ -232,9 +232,9 @@ variable "tag_categories" {
 variable "databases" {
   description = <<-EOT
     Configuration for databases to create (Multi-Database Approach).
-    
+
     **Pattern**: {ENV}_{LAYER} (e.g., DEV_RAW, QA_ANL, PROD_INT)
-    
+
     - Each data layer gets its own database
     - Database key determines the layer name (e.g., "raw" → DEV_RAW, "anl" → DEV_ANL)
     - Use `suffix` to override the key name
@@ -656,4 +656,4 @@ variable "default_network_policy" {
     ])
     error_message = "IP addresses must be valid IPv4 (e.g., 192.168.1.1 or 192.168.1.0/24) or IPv6 addresses in CIDR notation."
   }
-} 
+}
