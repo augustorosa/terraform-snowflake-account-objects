@@ -99,6 +99,8 @@ docs/_build/
 *.crt
 *.p12
 *.pfx
+*.p8
+*.pub
 secrets/
 credentials/
 

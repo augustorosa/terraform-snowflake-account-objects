@@ -246,7 +246,7 @@ Releases are automated using semantic-release based on commit messages.
 
 When changes are merged to `main`:
 
-1. Semantic-release analysiss commits
+1. Semantic-release analyzes commits
 2. Determines version bump (major/minor/patch)
 3. Updates CHANGELOG.md
 4. Creates Git tag

@@ -13,30 +13,20 @@
 # =============================================================================
 
 locals {
-  # Environment prefix mapping
+  # Environment prefix mapping (per ARCHITECTURE.md Section 9.1)
+  # Note: Using QA instead of STAGING to avoid confusion with data staging concepts
   env_prefix = {
-    dev     = "DEV"
-    staging = "STG"
-    prod    = "PRD"
+    dev  = "DEV"
+    qa   = "QA"
+    prod = "PROD"
   }
 
   # Construct base naming components
   base_prefix = upper("${local.env_prefix[lower(var.environment)]}_${var.project_name}")
 
-  # Tag values with defaults (removed timestamp to prevent plan drift)
-  all_tags = merge(
-    var.default_tags,
-    {
-      environment       = var.environment
-      project           = var.project_name
-      module_version    = var.module_version
-      terraform_managed = "true"
-    }
-  )
-
   # Central settings database name (for network rules, governance, etc.)
   central_db_name = upper(var.project_name)
-  
+
   # Tag database name (legacy - now uses central database)
   tag_database_name = var.enable_tagging ? "${local.base_prefix}_${upper(var.tag_database_suffix)}_DB" : ""
 

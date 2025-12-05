@@ -14,14 +14,14 @@
 locals {
   # Use central database if enabled, otherwise use legacy tag database
   tag_database = var.enable_tagging && var.create_tag_schema ? (
-    var.use_central_db_for_tags && var.enable_central_settings_db 
-    ? snowflake_database.central_settings[0].name 
+    var.use_central_db_for_tags && var.enable_central_settings_db
+    ? snowflake_database.central_settings[0].name
     : snowflake_database.tag_database[0].name
   ) : null
-  
+
   tag_schema = var.enable_tagging && var.create_tag_schema ? (
-    var.use_central_db_for_tags && var.enable_central_settings_db 
-    ? snowflake_schema.tags_schema[0].name 
+    var.use_central_db_for_tags && var.enable_central_settings_db
+    ? snowflake_schema.tags_schema[0].name
     : snowflake_schema.tag_schema[0].name
   ) : null
 }
@@ -213,7 +213,7 @@ resource "snowflake_tag_association" "schema_data_classification" {
   object_identifiers = [snowflake_schema.schemas[each.key].fully_qualified_name]
   object_type        = "SCHEMA"
   tag_id             = snowflake_tag.governance_tags["data_classification"].fully_qualified_name
-  tag_value          = (
+  tag_value = (
     each.value.schema_name == "RAW" ? "INTERNAL" :
     each.value.schema_name == "PREPARE" ? "INTERNAL" :
     each.value.schema_name == "ANALYSIS" ? "CONFIDENTIAL" :

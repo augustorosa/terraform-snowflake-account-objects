@@ -1,26 +1,37 @@
-# Snowflake Connection Configuration
-# Set these environment variables before running terraform:
-# export SNOWFLAKE_ACCOUNT="your-account-identifier"
-# export SNOWFLAKE_USER="your-username"
-# export SNOWFLAKE_PASSWORD="your-password"
-# export SNOWFLAKE_REGION="us-east-1"
+# =============================================================================
+# TERRAFORM.TFVARS - COMPREHENSIVE EXAMPLE
+# =============================================================================
+# Copy to terraform.tfvars and fill in your credentials:
+#   cp terraform.tfvars.example terraform.tfvars
+# =============================================================================
 
-# Or use these variables in terraform.tfvars (less secure):
-snowflake_account  = "your-account-identifier"
-snowflake_username = "your-username"
-snowflake_password = "your-password"
-snowflake_region   = "us-east-1"
+# Snowflake Connection (REQUIRED)
+organization_name  = "YOUR_ORG"        # e.g., "FDQNVZK"
+snowflake_account  = "YOUR_ACCOUNT"    # e.g., "COB88770"
+snowflake_username = "YOUR_USERNAME"
+snowflake_password = "YOUR_PASSWORD"
+snowflake_warehouse = "COMPUTE_WH"     # Existing warehouse (usually COMPUTE_WH exists by default)
 
 # Project Configuration
-project_name = "analytics"
-environment  = "dev"  # Options: dev, staging, prod
+project_name = "archetype"
+environment  = "dev"
 
-# Organization Details
-organization_name = "my-company"
-team_name         = "data-team"
+# Optional: Organization Details
+team_name    = "data-platform"
+cost_center  = "engineering"
+owner_email  = "data-team@company.com"
 
-# User Passwords (for testing purposes)
-# In production, use secure password management
-analyst_password  = "AnalystPass123!"
-engineer_password = "EngineerPass123!"
-admin_password    = "AdminPass123!" 
+# Optional: Resource Limits
+data_retention_days  = 7
+monthly_credit_quota = 100
+
+# Optional: Network Policies (set to true to enable)
+enable_network_policies = false
+allowed_ip_ranges = ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]
+
+# Optional: Preview Features (required for stages, file formats, and network rules)
+preview_features_enabled = [
+  "snowflake_stage_resource",
+  "snowflake_file_format_resource",
+  "snowflake_network_rule_resource"
+]

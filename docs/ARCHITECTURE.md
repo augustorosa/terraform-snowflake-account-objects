@@ -21,15 +21,15 @@ This document describes the architecture of the Terraform Snowflake Account Obje
 │  ┌─────────────────────────────────────────────────────┐              │
 │  │                    WAREHOUSES                        │              │
 │  ├──────────────┬──────────────┬────────────────────────┤              │
-│  │ LOAD_WH      │ TRANSFORM_WH │ ANALYTICS_WH          │              │
+│  │ INGEST_WH    │ TRANSFORM_WH │ ANALYTICS_WH          │              │
 │  │ (X-Small)    │ (Small-Med)  │ (Medium-Large)        │              │
 │  └──────────────┴──────────────┴────────────────────────┘              │
 │                                                                         │
 │  ┌─────────────────────────────────────────────────────┐              │
-│  │                      ROLES                           │              │
+│  │                      ROLES (Simplified)              │              │
 │  ├──────────────┬──────────────┬────────────────────────┤              │
-│  │ LOADER       │ TRANSFORMER  │ ANALYST               │              │
-│  │ ROLES        │ ROLES        │ ROLES                 │              │
+│  │ READER_RL    │ WRITER_RL    │ ADMIN_RL              │              │
+│  │ (Read data)  │ (Read/Write) │ (Full access)         │              │
 │  └──────────────┴──────────────┴────────────────────────┘              │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
@@ -153,42 +153,51 @@ graph LR
 
 ## 4. RBAC Architecture
 
-### 4.1 Role Hierarchy
+### 4.1 Role Hierarchy (Simplified)
 
 ```
-ACCOUNTADMIN
+SYSADMIN
     │
-    ├── SYSADMIN
-    │   ├── ENV_PROJECT_ADMIN
-    │   │   ├── ENV_PROJECT_DEVELOPER
-    │   │   └── ENV_PROJECT_DATA_ENGINEER
-    │   │
-    │   └── ENV_PROJECT_WAREHOUSE_ADMIN
-    │
-    └── SECURITYADMIN
-        ├── ENV_PROJECT_USER_ADMIN
-        └── ENV_PROJECT_ROLE_ADMIN
+    └── ENV_PROJECT_ADMIN_RL
+            │
+            ├── ENV_PROJECT_WRITER_RL
+            │       │
+            │       └── ENV_PROJECT_READER_RL
+            │
+            ├── ENV_PROJECT_ALL_DATA_RL (Access to all layers)
+            ├── ENV_PROJECT_ANALYSIS_ONLY_RL (Analysis layer only)
+            └── ENV_PROJECT_INGEST_ONLY_RL (RAW layer only)
 
-PUBLIC
-    ├── ENV_PROJECT_ANALYST
-    ├── ENV_PROJECT_REPORTER
-    └── ENV_PROJECT_VIEWER
+Functional Roles (Inheritance Chain):
+    READER_RL → WRITER_RL → ADMIN_RL → SYSADMIN
 
-Integration Roles:
-    ├── ENV_PROJECT_DBT_TRANSFORMER
-    ├── ENV_PROJECT_AIRFLOW_OPERATOR
-    └── ENV_PROJECT_FIVETRAN_LOADER
+Data Access Roles (Granted to ADMIN):
+    ├── ALL_DATA_RL (RAW + PREPARE + ANALYSIS)
+    ├── ANALYSIS_ONLY_RL (ANALYSIS layer)
+    └── INGEST_ONLY_RL (RAW layer)
+
+Custom Roles (Examples - add as needed):
+    ├── ENV_PROJECT_DEVELOPER_RL
+    ├── ENV_PROJECT_DATA_ENGINEER_RL
+    ├── ENV_PROJECT_ANALYST_RL
+    └── ENV_PROJECT_DBT_TRANSFORMER_RL
 ```
 
-### 4.2 Permission Model
+### 4.2 Permission Model (Simplified)
 
-| Role | RAW Layer | PREPARE Layer | ANALYSIS Layer | Warehouses |
-|------|-----------|---------------|---------------|------------|
-| LOADER | Write | - | - | LOAD_WH (Usage) |
-| TRANSFORMER | Read | Read/Write | Write | TRANSFORM_WH (Usage/Operate) |
-| ANALYST | - | Read | Read | ANALYTICS_WH (Usage) |
-| DEVELOPER | Read | Read/Write | Read/Write | All (Usage/Operate) |
-| ADMIN | All | All | All | All (All permissions) |
+| Role | RAW Layer | PREPARE Layer | ANALYSIS Layer | Warehouses | Inherits From |
+|------|-----------|---------------|---------------|------------|---------------|
+| READER_RL | - | - | Read | ANALYTICS_WH (Usage) | - |
+| WRITER_RL | Read | Read/Write | Read/Write | All (Usage/Operate) | READER_RL |
+| ADMIN_RL | All | All | All | All (All permissions) | WRITER_RL |
+
+**Data Access Roles** (Granted to ADMIN):
+- **ALL_DATA_RL**: Access to RAW + PREPARE + ANALYSIS layers
+- **ANALYSIS_ONLY_RL**: Access to ANALYSIS layer only  
+- **INGEST_ONLY_RL**: Access to RAW layer only (for ETL tools)
+
+**Custom Roles** (Add as needed via `custom_roles` variable):
+- Examples: DEVELOPER_RL, DATA_ENGINEER_RL, ANALYST_RL, DBT_TRANSFORMER_RL
 
 ## 5. Database Architecture
 
@@ -251,7 +260,7 @@ CREATE SCHEMA ANALYSIS.EXECUTIVE_REPORTS;
 
 | Warehouse Type | Size | Use Case | Auto-Suspend |
 |----------------|------|----------|--------------|
-| LOAD_WH | X-Small to Small | Data ingestion, light transforms | 60 seconds |
+| INGEST_WH | X-Small to Small | Data ingestion, light transforms | 60 seconds |
 | TRANSFORM_WH | Small to Medium | Heavy transformations, dbt runs | 300 seconds |
 | ANALYTICS_WH | Medium to Large | Complex queries, BI tools | 600 seconds |
 | ADMIN_WH | X-Small | Administrative tasks | 60 seconds |
@@ -260,7 +269,7 @@ CREATE SCHEMA ANALYSIS.EXECUTIVE_REPORTS;
 
 ```yaml
 warehouses:
-  load:
+  ingest:
     size: "X-SMALL"
     auto_suspend: 60
     auto_resume: true
@@ -297,8 +306,8 @@ External Sources → Ingestion Tools → RAW → Transformation Tools → PREPAR
 #### 7.2.1 Fivetran Integration
 - **Target**: RAW layer schemas
 - **Permissions**: CREATE SCHEMA, CREATE TABLE, INSERT
-- **Warehouse**: LOAD_WH
-- **User Type**: Service account
+- **Warehouse**: INGEST_WH
+- **User Type**: Service account with WRITER_RL + INGEST_ONLY_RL
 
 #### 7.2.2 dbt Integration
 - **Source**: RAW and PREPARE layers
@@ -336,21 +345,32 @@ network_policies:
 
 ## 9. Multi-Environment Architecture
 
-### 9.1 Single Account Strategy
+### 9.1 Single Account Strategy (Multi-Database Approach)
 ```
 SNOWFLAKE_ACCOUNT
-├── DEV_PROJECT_DB
-│   ├── RAW
-│   ├── PREPARE
-│   └── ANALYSIS
-├── STAGING_PROJECT_DB
-│   ├── RAW
-│   ├── PREPARE
-│   └── ANALYSIS
-└── PROD_PROJECT_DB
-    ├── RAW
-    ├── PREPARE
-    └── ANALYSIS
+├── DEV_RAW            (Database - Raw data layer)
+│   └── SOURCE_NAME    (Schema for each source system: SALESFORCE, MYSQL, etc.)
+├── DEV_ANL            (Database - Analysis layer)
+│   └── SOURCE_NAME    (Schema for business domains: CUSTOMER, PRODUCT, etc.)
+├── DEV_INT            (Database - Integration layer)
+│   └── SOURCE_NAME    (Schema for analytical models: METRICS, REPORTS, etc.)
+├── QA_RAW
+│   └── SOURCE_NAME
+├── QA_ANL
+│   └── SOURCE_NAME
+├── QA_INT
+│   └── SOURCE_NAME
+├── PROD_RAW
+│   └── SOURCE_NAME
+├── PROD_ANL
+│   └── SOURCE_NAME
+└── PROD_INT
+    └── SOURCE_NAME
+
+Pattern: {ENV}_{LAYER}
+- Layers: RAW (raw data), ANL (analysis), INT (integration)
+- Each layer is a separate database
+- Schemas inside databases are named after source systems or business domains
 ```
 
 ### 9.2 Multi-Account Strategy
@@ -361,7 +381,7 @@ DEV_ACCOUNT
     ├── PREPARE
     └── ANALYSIS
 
-STAGING_ACCOUNT
+QA_ACCOUNT
 └── PROJECT_DB
     ├── RAW
     ├── PREPARE
@@ -378,19 +398,25 @@ PROD_ACCOUNT
 
 ### 10.1 Resource Naming Pattern
 ```
-{ENVIRONMENT}_{PROJECT}_{RESOURCE_TYPE}_{FUNCTION}
+{ENVIRONMENT}_{PROJECT}_{RESOURCE}_SUFFIX
+
+Database: {ENV}_{PROJECT}_DB
+Warehouse: {ENV}_{PROJECT}_{FUNCTION}_WH  
+Role: {ENV}_{PROJECT}_{ROLE}_RL
+User: {ENV}_{PROJECT}_USER_{NAME}
 
 Examples:
-- DEV_ANALYTICS_DB
-- DEV_ANALYTICS_WH_TRANSFORM
-- DEV_ANALYTICS_ROLE_DBT_TRANSFORMER
-- DEV_ANALYTICS_USER_AIRFLOW
+- DEV_ULONO_DB
+- DEV_ULONO_TRANSFORM_WH
+- DEV_ULONO_ADMIN_RL
+- DEV_ULONO_WRITER_RL
+- DEV_ULONO_USER_AIRFLOW
 ```
 
 ### 10.2 Tag Architecture
 ```yaml
 tags:
-  environment: ["dev", "staging", "prod"]
+  environment: ["dev", "qa", "prod"]  # Using qa instead of staging to avoid confusion with data staging
   project: ["analytics", "finance", "marketing"]
   owner: ["data-team", "analytics-team", "platform-team"]
   cost-center: ["1001", "1002", "1003"]
