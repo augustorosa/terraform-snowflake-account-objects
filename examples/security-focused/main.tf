@@ -10,7 +10,7 @@ terraform {
   required_providers {
     snowflake = {
       source  = "snowflakedb/snowflake"
-      version = "= 2.7.0"
+      version = "= 2.11.0"
     }
   }
 }
@@ -53,28 +53,16 @@ module "snowflake_secure_account" {
 
   custom_roles = {
     "SECURITY_ADMIN" = {
-      comment = "Enhanced security administration role"
+      comment      = "Enhanced security administration role"
+      inherit_from = "ADMIN"
     }
     "COMPLIANCE_AUDITOR" = {
-      comment = "Read-only access for compliance auditing"
+      comment      = "Read-only access for compliance auditing"
+      inherit_from = "READER"
     }
     "SERVICE_ACCOUNT_MANAGER" = {
-      comment = "Manages service accounts and authentication"
-    }
-  }
-
-  role_grants = {
-    "SECURITY_ADMIN" = {
-      roles = ["SECURITYADMIN"]
-      users = []
-    }
-    "COMPLIANCE_AUDITOR" = {
-      roles = ["READER"]
-      users = []
-    }
-    "SERVICE_ACCOUNT_MANAGER" = {
-      roles = ["USERADMIN"]
-      users = []
+      comment      = "Manages service accounts and authentication"
+      inherit_from = "ADMIN"
     }
   }
 
@@ -128,40 +116,21 @@ module "snowflake_secure_account" {
   # =============================================================================
   create_tag_schema = true
 
-  governance_tags = {
-    "SECURITY_CLASSIFICATION" = {
-      allowed_values = ["PUBLIC", "INTERNAL", "CONFIDENTIAL", "RESTRICTED"]
-      comment        = "Data security classification level"
+  # Use tag_categories to define which tags to create
+  # Note: The module supports predefined tags. Custom tags with allowed_values
+  # would need to be created outside the module or added to the module code.
+  tag_categories = {
+    governance = {
+      required = true
+      tags     = ["environment", "project", "owner", "cost_center", "data_classification"]
     }
-    "COMPLIANCE_SCOPE" = {
-      allowed_values = ["SOX", "PCI", "HIPAA", "GDPR", "NONE"]
-      comment        = "Regulatory compliance requirements"
+    operational = {
+      required = true
+      tags     = ["created_by", "created_date", "last_modified_by", "last_modified_date"]
     }
-    "ACCESS_LEVEL" = {
-      allowed_values = ["PUBLIC", "AUTHENTICATED", "AUTHORIZED", "PRIVILEGED"]
-      comment        = "Required access level for data"
-    }
-  }
-
-  operational_tags = {
-    "SECURITY_CONTACT" = {
-      allowed_values = []
-      comment        = "Security team contact for this resource"
-    }
-    "AUDIT_FREQUENCY" = {
-      allowed_values = ["DAILY", "WEEKLY", "MONTHLY", "QUARTERLY", "ANNUALLY"]
-      comment        = "Required audit frequency"
-    }
-  }
-
-  technical_tags = {
-    "ENCRYPTION_REQUIRED" = {
-      allowed_values = ["TRUE", "FALSE"]
-      comment        = "Whether encryption is required"
-    }
-    "MFA_REQUIRED" = {
-      allowed_values = ["TRUE", "FALSE"]
-      comment        = "Whether MFA is required for access"
+    technical = {
+      required = true
+      tags     = ["version", "terraform_managed", "module_version"]
     }
   }
 }

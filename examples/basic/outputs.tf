@@ -1,9 +1,4 @@
 # Module Outputs
-output "naming_prefix" {
-  description = "The naming prefix used for all resources"
-  value       = module.snowflake_foundation.naming_prefix
-}
-
 output "tag_database" {
   description = "The tag database name"
   value       = module.snowflake_foundation.tag_database_name
@@ -24,9 +19,9 @@ output "all_roles" {
   value       = module.snowflake_foundation.all_role_names
 }
 
-output "governance_tags" {
-  description = "Governance tags created"
-  value       = module.snowflake_foundation.governance_tags
+output "tags_created" {
+  description = "Tags created by the module"
+  value       = module.snowflake_foundation.tags_created
 }
 
 # Example Database Outputs
@@ -35,37 +30,7 @@ output "main_database_name" {
   value       = snowflake_database.main.name
 }
 
-output "validation_procedure" {
-  description = "Naming validation procedure details"
-  value       = module.snowflake_foundation.naming_validation_procedure
-}
-
-# Usage Examples
-output "naming_examples" {
-  description = "Examples of properly named resources"
-  value = {
-    database  = "${module.snowflake_foundation.naming_prefix}_DB_<NAME>"
-    schema    = "${module.snowflake_foundation.naming_prefix}_SCH_<NAME>"
-    warehouse = "${module.snowflake_foundation.naming_prefix}_WH_<NAME>"
-    role      = "${module.snowflake_foundation.naming_prefix}_ROLE_<NAME>"
-    user      = "${module.snowflake_foundation.naming_prefix}_USER_<NAME>"
-  }
-}
-
-output "role_usage_examples" {
-  description = "Examples of how to assign roles to users"
-  value = {
-    business_analyst = [
-      "GRANT ROLE ${module.snowflake_foundation.functional_role_names[0]} TO USER analyst_jane;",
-      "GRANT ROLE ${module.snowflake_foundation.data_access_role_names[1]} TO USER analyst_jane;"
-    ]
-    data_engineer = [
-      "GRANT ROLE ${module.snowflake_foundation.functional_role_names[1]} TO USER engineer_john;",
-      "GRANT ROLE ${module.snowflake_foundation.data_access_role_names[0]} TO USER engineer_john;"
-    ]
-    etl_tool = [
-      "GRANT ROLE ${module.snowflake_foundation.functional_role_names[1]} TO USER fivetran_service;",
-      "GRANT ROLE ${module.snowflake_foundation.data_access_role_names[2]} TO USER fivetran_service;"
-    ]
-  }
+output "module_configuration_summary" {
+  description = "Summary of module configuration"
+  value       = module.snowflake_foundation.configuration_summary
 } 
