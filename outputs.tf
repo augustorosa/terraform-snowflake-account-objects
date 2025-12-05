@@ -143,6 +143,15 @@ output "custom_roles" {
   } : {}
 }
 
+output "project_admin_role" {
+  description = "Information about the cross-environment project admin role"
+  value = var.enable_rbac && var.create_default_roles && length(snowflake_account_role.project_admin) > 0 ? {
+    id      = snowflake_account_role.project_admin[0].id
+    name    = snowflake_account_role.project_admin[0].name
+    comment = snowflake_account_role.project_admin[0].comment
+  } : null
+}
+
 output "all_roles" {
   description = "All roles created by the module"
   value = merge(
@@ -164,22 +173,12 @@ output "all_roles" {
         type    = "data_access"
       }
     } : {},
-    var.enable_rbac && var.create_default_roles ? {
-      for role_name, role in snowflake_account_role.functional_roles :
-      role_name => {
-        id      = role.id
-        name    = role.name
-        comment = role.comment
-        type    = "functional"
-      }
-    } : {},
-    var.enable_rbac && var.create_default_roles ? {
-      for role_name, role in snowflake_account_role.data_access_roles :
-      role_name => {
-        id      = role.id
-        name    = role.name
-        comment = role.comment
-        type    = "data_access"
+    var.enable_rbac && var.create_default_roles && length(snowflake_account_role.project_admin) > 0 ? {
+      PROJECT_ADMIN = {
+        id      = snowflake_account_role.project_admin[0].id
+        name    = snowflake_account_role.project_admin[0].name
+        comment = snowflake_account_role.project_admin[0].comment
+        type    = "project_admin"
       }
     } : {},
     var.enable_rbac ? {

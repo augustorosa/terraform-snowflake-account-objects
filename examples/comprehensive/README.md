@@ -75,20 +75,23 @@ terraform apply
 ### Roles
 
 #### Functional Roles
-- `DEV_ANALYTICS_READER_ROLE` - Read-only access
-- `DEV_ANALYTICS_WRITER_ROLE` - Read/write access
-- `DEV_ANALYTICS_ADMIN_ROLE` - Full administrative access
+- `DEV_ANALYTICS_READER_RL` - Read-only access (gets ANALYSIS_RL)
+- `DEV_ANALYTICS_WRITER_RL` - Read/write access (inherits READER, gets TRANSFORM_RL)
+- `DEV_ANALYTICS_ADMIN_RL` - Full administrative access (inherits WRITER→READER, gets all data access roles)
 
 #### Custom Roles
-- `DEV_ANALYTICS_DATA_SCIENTIST_ROLE` - Inherits from READER
-- `DEV_ANALYTICS_ML_ENGINEER_ROLE` - Inherits from WRITER
-- `DEV_ANALYTICS_PLATFORM_ADMIN_ROLE` - Inherits from ADMIN
+- `DEV_ANALYTICS_DATA_SCIENTIST_RL` - Inherits from READER
+- `DEV_ANALYTICS_ML_ENGINEER_RL` - Inherits from WRITER
+- `DEV_ANALYTICS_PLATFORM_ADMIN_RL` - Inherits from ADMIN
 
 #### Data Access Roles
-- `DEV_ANALYTICS_RAW_READ_ROLE`
-- `DEV_ANALYTICS_PREPARE_READ_ROLE`
-- `DEV_ANALYTICS_ANALYSIS_READ_ROLE`
-- `DEV_ANALYTICS_ANALYSIS_ONLY_ROLE`
+- `DEV_ANALYTICS_INGEST_RL` - INSERT/COPY to RAW databases only
+- `DEV_ANALYTICS_TRANSFORM_RL` - READ RAW, WRITE INT+ANL databases
+- `DEV_ANALYTICS_ANALYSIS_RL` - READ ANL databases only
+- `DEV_ANALYTICS_SCIENTIST_RL` - READ RAW+INT+ANL databases (all read-only)
+
+#### Cross-Environment Role
+- `ANALYTICS_ADMIN_RL` - Cross-environment project administrator (inherits from all env ADMIN roles, inherits to SYSADMIN)
 
 ### Central Settings Database
 

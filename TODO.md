@@ -34,19 +34,35 @@
 
 ---
 
-## ✅ RESOLVED - RBAC Architecture Alignment
+## ✅ COMPLETED - RBAC Architecture Implementation (v0.6.0)
 
-**Decision**: Follow **Simplified RBAC_ARCHITECTURE.md** approach
+**Structure**: Per-Environment (7 roles) + Cross-Environment (1 role)
 
-**Implemented**:
-- ✅ 6 simplified roles (READER, WRITER, ADMIN + data access roles)
-- ✅ Naming: `{ENV}_{PROJECT}_{ROLE}_RL` (with `_RL` suffix)
-- ✅ Example: `DEV_ULONO_READER_RL`, `QA_ULONO_ADMIN_RL`
-- ✅ Proper inheritance: READER_RL → WRITER_RL → ADMIN_RL → SYSADMIN
-- ✅ Complex roles available via `custom_roles` variable
-- ✅ Updated ARCHITECTURE.md to match simplified approach
-- ✅ Changed LOAD → INGEST (warehouses and roles)
-- ✅ Environments: dev, qa, prod (using QA instead of STAGING)
+**Per Environment Roles** (e.g., DEV):
+- **Functional Roles** (3): `{ENV}_{PROJECT}_READER_RL`, `{ENV}_{PROJECT}_WRITER_RL`, `{ENV}_{PROJECT}_ADMIN_RL`
+  - Inheritance: READER → WRITER → ADMIN
+- **Data Access Roles** (4): `{ENV}_{PROJECT}_INGEST_RL`, `{ENV}_{PROJECT}_TRANSFORM_RL`, `{ENV}_{PROJECT}_ANALYSIS_RL`, `{ENV}_{PROJECT}_SCIENTIST_RL`
+  - INGEST: INSERT/COPY to RAW only
+  - TRANSFORM: READ RAW, WRITE INT+ANL
+  - ANALYSIS: READ ANL only
+  - SCIENTIST: READ RAW+INT+ANL (all read-only)
+
+**Cross-Environment Role**:
+- `{PROJECT}_ADMIN_RL` - Inherits from all env ADMIN roles, inherits to SYSADMIN
+
+**Grants**:
+- READER_RL gets ANALYSIS_RL
+- WRITER_RL gets TRANSFORM_RL (inherits ANALYSIS_RL via READER)
+- ADMIN_RL gets all data access roles (INGEST, TRANSFORM, ANALYSIS, SCIENTIST)
+
+**Database Permissions**:
+- INGEST_RL: USAGE + INSERT/CREATE on RAW databases
+- TRANSFORM_RL: USAGE + SELECT on RAW, USAGE + ALL on INT+ANL
+- ANALYSIS_RL: USAGE + SELECT on ANL databases
+- SCIENTIST_RL: USAGE + SELECT on RAW+INT+ANL databases
+
+**Status**: ✅ Fully implemented in `rbac.tf`
+**Files**: `rbac.tf`, `outputs.tf`, `examples/comprehensive/README.md`
 
 ---
 
