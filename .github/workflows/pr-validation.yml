@@ -100,36 +100,42 @@ jobs:
             const pr = context.payload.pull_request;
             const body = pr.body || '';
             
-            // Check for required sections
-            const requiredSections = [
+            // Check for recommended sections (warn but don't fail)
+            const recommendedSections = [
               '## Description',
               '## Type of Change',
               '## Testing',
               '## Checklist'
             ];
             
-            const missingSections = requiredSections.filter(section => 
+            const missingSections = recommendedSections.filter(section => 
               !body.includes(section)
             );
             
             if (missingSections.length > 0) {
-              core.setFailed(`PR description is missing required sections: ${missingSections.join(', ')}`);
+              // Only warn, don't fail - allows flexibility for different PR types
+              const message = `⚠️ **PR Description Recommendation**\n\nYour PR description could be improved by adding the following sections:\n${missingSections.map(s => `- ${s}`).join('\n')}\n\n**Template:**\n\`\`\`\n## Description\nBrief description of changes\n\n## Type of Change\n- [ ] Bug fix\n- [ ] New feature\n- [ ] Breaking change\n- [ ] Documentation update\n\n## Testing\nHow was this tested?\n\n## Checklist\n- [ ] Code follows style guidelines\n- [ ] Self-review completed\n- [ ] Comments added for complex code\n- [ ] Documentation updated\n\`\`\``;
               
-              // Try to add comment to PR (may fail if permissions insufficient)
+              // Try to add comment to PR (non-blocking)
               try {
                 await github.rest.issues.createComment({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   issue_number: pr.number,
-                  body: `❌ **PR Validation Failed**\n\nYour PR description is missing the following required sections:\n${missingSections.map(s => `- ${s}`).join('\n')}\n\nPlease update your PR description to include all required sections.`
+                  body: message
                 });
               } catch (error) {
                 core.warning(`Could not add comment to PR: ${error.message}`);
               }
+              
+              // Log warning but don't fail the workflow
+              core.warning(`PR description is missing recommended sections: ${missingSections.join(', ')}`);
+            } else {
+              core.info('✅ PR description includes all recommended sections');
             }
             
             // Check for breaking changes
-            if (body.toLowerCase().includes('breaking change')) {
+            if (body.toLowerCase().includes('breaking change') || body.toLowerCase().includes('breaking')) {
               try {
                 await github.rest.issues.addLabels({
                   owner: context.repo.owner,

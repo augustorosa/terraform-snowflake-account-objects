@@ -69,6 +69,13 @@ We use [Conventional Commits](https://www.conventionalcommits.org/) for our comm
 <footer>
 ```
 
+**Rules:**
+- Header (first line) must be ≤ 100 characters
+- Body lines must be ≤ 120 characters
+- Subject must start with lowercase letter (or version number like `v0.6.0`)
+- Body and footer must be separated by blank line
+- Use imperative mood ("add feature" not "added feature")
+
 ### Types
 
 - **feat**: New feature (MINOR version bump)
@@ -96,15 +103,26 @@ We use [Conventional Commits](https://www.conventionalcommits.org/) for our comm
 - **examples**: Example configurations
 - **tests**: Test framework
 - **ci**: CI/CD pipeline
+- **deps**: Dependency updates
 
 ### Examples
 
 ```bash
-# Feature
+# Feature (simple)
 feat(database): add support for transient tables
+
+# Feature with body
+feat(rbac): implement cross-environment project admin role
+
+Added PROJECT_ADMIN_RL role that inherits from all environment
+admin roles and SYSADMIN. This enables superusers to manage
+resources across all environments.
 
 # Bug fix
 fix(rbac): correct role inheritance for custom roles
+
+Fixed issue where custom roles with inherit_from attribute
+were not properly inheriting parent role privileges.
 
 # Breaking change
 feat(warehouse)!: change default warehouse size to X-Small
@@ -112,9 +130,49 @@ feat(warehouse)!: change default warehouse size to X-Small
 BREAKING CHANGE: Default warehouse size changed from Small to X-Small.
 Users must explicitly set size to maintain previous behavior.
 
-# Multiple scopes
+# Documentation
+docs(readme): add PR description guidelines
+
+Added recommended PR description template and commit message
+formatting rules to CONTRIBUTING.md.
+
+# Multiple scopes (not recommended, prefer separate commits)
 feat(database,warehouse): add cross-database query support
+
+# Version release (special case)
+feat: v0.6.0 - Major refactoring, provider 2.11.0, security enhancements
 ```
+
+### Commit Message Best Practices
+
+1. **Be Specific**: Clearly describe what changed
+   - ❌ `fix: bug fix`
+   - ✅ `fix(rbac): correct role inheritance lookup logic`
+
+2. **Use Imperative Mood**: Write as if completing "This commit will..."
+   - ❌ `feat: added new role`
+   - ✅ `feat: add new role`
+
+3. **Keep Subject Concise**: First line should be clear summary
+   - ❌ `feat: implement a comprehensive role-based access control system with inheritance`
+   - ✅ `feat(rbac): implement role inheritance hierarchy`
+
+4. **Use Body for Context**: Explain why, not just what
+   ```bash
+   fix(security): prevent unauthorized database access
+   
+   Updated network policy validation to reject PUBLIC network
+   rules. This prevents accidental exposure of databases to
+   all IP addresses.
+   ```
+
+5. **Breaking Changes**: Always include BREAKING CHANGE footer
+   ```bash
+   feat(database)!: rename PREPARE layer to INT
+   
+   BREAKING CHANGE: The PREPARE layer has been renamed to INT
+   (Integration). Update all references in your configurations.
+   ```
 
 ### Using Commitizen
 
@@ -155,11 +213,41 @@ git cz
 
 1. **Title**: Use conventional commit format
    - Example: `feat(rbac): add support for dynamic role creation`
+   - Must start with type (feat, fix, docs, etc.)
+   - Subject should start with uppercase letter or version number (e.g., `v0.6.0`)
 
-2. **Description**: Fill out the PR template completely
-   - Describe changes
-   - Link related issues
-   - Include testing evidence
+2. **Description**: Include recommended sections (workflow will suggest if missing)
+   
+   **Recommended PR Description Template:**
+   ```markdown
+   ## Description
+   Brief description of what this PR changes and why.
+   
+   ## Type of Change
+   - [ ] Bug fix (non-breaking change which fixes an issue)
+   - [ ] New feature (non-breaking change which adds functionality)
+   - [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
+   - [ ] Documentation update
+   - [ ] Refactoring (no functional changes)
+   - [ ] Performance improvement
+   - [ ] Test updates
+   
+   ## Testing
+   Describe the tests you ran to verify your changes:
+   - [ ] Unit tests pass
+   - [ ] Integration tests pass
+   - [ ] Manual testing completed
+   - [ ] Tested with example configurations
+   
+   ## Checklist
+   - [ ] Code follows style guidelines
+   - [ ] Self-review completed
+   - [ ] Comments added for complex code
+   - [ ] Documentation updated
+   - [ ] No new warnings generated
+   - [ ] Tests added/updated and passing
+   - [ ] All commits follow conventional commit format
+   ```
 
 3. **Tests**: Add/update tests for your changes
    - Unit tests required for new features

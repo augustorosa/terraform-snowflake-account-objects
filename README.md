@@ -272,7 +272,23 @@ This module is built for Snowflake provider `~> 2.0` and handles all breaking ch
 
 ## 🤝 **Contributing**
 
-Contributions are welcome! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
+Contributions are welcome! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for detailed guidelines.
+
+### Quick Contribution Guide
+
+**Commit Messages**: Follow [Conventional Commits](https://www.conventionalcommits.org/) format:
+- `feat(scope): add new feature`
+- `fix(scope): fix bug`
+- `docs(scope): update documentation`
+- `refactor(scope): refactor code`
+
+**Pull Request Description**: Include these recommended sections:
+- `## Description` - Brief overview of changes
+- `## Type of Change` - Bug fix, new feature, breaking change, etc.
+- `## Testing` - How the changes were tested
+- `## Checklist` - Confirmation of completed tasks
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for complete guidelines.
 
 ## 📚 **Documentation**
 
