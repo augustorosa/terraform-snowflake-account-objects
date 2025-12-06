@@ -143,3 +143,4 @@ tests/fixtures/credentials/
 # Generated files
 CHANGELOG.md.bak
 VERSION.bak 
+examples/*/tfplan

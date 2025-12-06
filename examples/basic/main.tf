@@ -24,14 +24,6 @@ module "snowflake_foundation" {
   enable_databases     = true
   create_tag_schema    = true
   create_default_roles = true
-
-  # Default tags
-  default_tags = {
-    managed_by   = "terraform"
-    cost_center  = var.cost_center
-    owner        = var.owner_email
-    created_date = timestamp()
-  }
 }
 
 # Example: Create a database

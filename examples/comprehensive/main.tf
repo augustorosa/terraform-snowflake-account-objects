@@ -34,6 +34,15 @@ provider "snowflake" {
   preview_features_enabled = var.preview_features_enabled
 }
 
+# Local variables for database naming
+locals {
+  env_prefix = {
+    dev  = "DEV"
+    qa   = "QA"
+    prod = "PROD"
+  }
+}
+
 # =============================================================================
 # MAIN MODULE - Full Configuration
 # =============================================================================
@@ -58,7 +67,7 @@ module "snowflake_account_objects" {
   enable_resource_monitors   = true
   enable_network_policies    = var.enable_network_policies
   enable_central_settings_db = true
-  enable_auto_classification = false # Requires Enterprise Edition
+  enable_auto_classification = true # Enterprise Edition enabled
 
   # Tag Configuration
   create_tag_schema       = true
@@ -202,20 +211,20 @@ module "snowflake_account_objects" {
   # -----------------------------------------------------------------------------
   # Data Loading Configuration
   # -----------------------------------------------------------------------------
-  # Note: Database names use the pattern: DEV_{PROJECT}_ANALYTICS_DB
-  # Adjust database names based on your project_name and environment
+  # Note: Database names use the pattern: {ENV}_{LAYER} (e.g., DEV_RAW, DEV_ANL, DEV_INT)
+  # Stages and file formats are created in the RAW database
   stages = {
     raw_landing = {
-      database = "DEV_${upper(var.project_name)}_ANALYTICS_DB"
-      schema   = "RAW"
+      database = "${local.env_prefix[lower(var.environment)]}_RAW"
+      schema   = "PUBLIC" # Using PUBLIC schema in RAW database
       comment  = "Landing stage for raw data files"
     }
   }
 
   file_formats = {
     csv_standard = {
-      database            = "DEV_${upper(var.project_name)}_ANALYTICS_DB"
-      schema              = "RAW"
+      database            = "${local.env_prefix[lower(var.environment)]}_RAW"
+      schema              = "PUBLIC"
       format_type         = "CSV"
       compression         = "AUTO"
       field_delimiter     = ","
@@ -225,8 +234,8 @@ module "snowflake_account_objects" {
       comment             = "Standard CSV format"
     }
     json_standard = {
-      database            = "DEV_${upper(var.project_name)}_ANALYTICS_DB"
-      schema              = "RAW"
+      database            = "${local.env_prefix[lower(var.environment)]}_RAW"
+      schema              = "PUBLIC"
       format_type         = "JSON"
       compression         = "AUTO"
       field_delimiter     = ""
@@ -237,12 +246,4 @@ module "snowflake_account_objects" {
     }
   }
 
-  # -----------------------------------------------------------------------------
-  # Default Tags
-  # -----------------------------------------------------------------------------
-  default_tags = {
-    team        = var.team_name
-    cost_center = var.cost_center
-    owner       = var.owner_email
-  }
 }

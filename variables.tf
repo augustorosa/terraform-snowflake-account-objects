@@ -185,14 +185,6 @@ variable "tag_database_suffix" {
   default     = "TAGS"
 }
 
-variable "default_tags" {
-  description = "Default tags to apply to all resources"
-  type        = map(string)
-  default = {
-    managed_by = "terraform"
-  }
-}
-
 variable "tag_categories" {
   description = "Tag categories and their allowed values"
   type = object({

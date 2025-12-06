@@ -185,13 +185,4 @@ module "snowflake_auth_test" {
   # TAGGING FOR PROPER RESOURCE ORGANIZATION
   # =============================================================================
   create_tag_schema = true
-
-  default_tags = {
-    environment   = "test"
-    purpose       = "authentication_testing"
-    managed_by    = "terraform"
-    test_suite    = "comprehensive_auth_test"
-    created_by    = "auth_test_suite"
-    expires_after = "30_days"
-  }
 }

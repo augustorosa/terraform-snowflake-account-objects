@@ -83,14 +83,6 @@ module "full_stack" {
   create_tag_schema   = true
   tag_database_suffix = "GOVERNANCE"
 
-  default_tags = {
-    managed_by   = "terraform"
-    cost_center  = "data_platform"
-    owner        = "data_team"
-    project_type = "analytics"
-    compliance   = "required"
-  }
-
   # Enhanced tag categories
   tag_categories = {
     governance = {
@@ -456,10 +448,6 @@ module "minimal_stack" {
   # Basic tagging only
   create_tag_schema = true
 
-  default_tags = {
-    managed_by      = "terraform"
-    deployment_type = "minimal"
-  }
 }
 
 # =============================================================================
@@ -507,8 +495,4 @@ module "database_only" {
     }
   }
 
-  default_tags = {
-    managed_by      = "terraform"
-    deployment_type = "database_only"
-  }
 } 
