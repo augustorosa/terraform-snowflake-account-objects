@@ -2,6 +2,7 @@ package unit
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -107,16 +108,35 @@ func validateSecuritySettings(t *testing.T, terraformOptions *terraform.Options)
 	}
 
 	// Check password policy
-	passwordPolicy := terraform.OutputMap(t, terraformOptions, "password_policy")
-	require.NotEmpty(t, passwordPolicy, "Password policy should be created")
+	passwordPolicyRaw := terraform.OutputMap(t, terraformOptions, "password_policy")
+	require.NotEmpty(t, passwordPolicyRaw, "Password policy should be created")
 
 	// Validate password policy settings
-	minLength, _ := passwordPolicy["min_length"].(float64)
-	assert.GreaterOrEqual(t, minLength, float64(12), "Password minimum length should be at least 12")
-	assert.Equal(t, "true", passwordPolicy["require_uppercase"], "Password should require uppercase")
-	assert.Equal(t, "true", passwordPolicy["require_lowercase"], "Password should require lowercase")
-	assert.Equal(t, "true", passwordPolicy["require_numeric"], "Password should require numeric")
-	assert.Equal(t, "true", passwordPolicy["require_special"], "Password should require special characters")
+	// terraform.OutputMap returns map[string]string, so we need to handle type conversion
+	passwordPolicy := make(map[string]interface{})
+	for k, v := range passwordPolicyRaw {
+		passwordPolicy[k] = v
+	}
+
+	minLength, ok := passwordPolicy["min_length"].(string)
+	if ok {
+		// If it's a string, try to parse it
+		minLengthFloat := 0.0
+		if n, err := strconv.ParseFloat(minLength, 64); err == nil {
+			minLengthFloat = n
+		}
+		assert.GreaterOrEqual(t, minLengthFloat, float64(12), "Password minimum length should be at least 12")
+	} else {
+		// Try as float64 directly
+		if minLengthFloat, ok := passwordPolicy["min_length"].(float64); ok {
+			assert.GreaterOrEqual(t, minLengthFloat, float64(12), "Password minimum length should be at least 12")
+		}
+	}
+
+	assert.Equal(t, "true", passwordPolicyRaw["require_uppercase"], "Password should require uppercase")
+	assert.Equal(t, "true", passwordPolicyRaw["require_lowercase"], "Password should require lowercase")
+	assert.Equal(t, "true", passwordPolicyRaw["require_numeric"], "Password should require numeric")
+	assert.Equal(t, "true", passwordPolicyRaw["require_special"], "Password should require special characters")
 }
 
 // validateTaggingSystem validates the auto-tagging system

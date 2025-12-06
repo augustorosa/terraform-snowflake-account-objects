@@ -144,3 +144,4 @@ tests/fixtures/credentials/
 CHANGELOG.md.bak
 VERSION.bak 
 examples/*/tfplan
+SECURITY_UPDATE_REVIEW.md

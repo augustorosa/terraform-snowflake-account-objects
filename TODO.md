@@ -82,7 +82,19 @@
 
 ## 📋 MEDIUM PRIORITY
 
-### 5. Testing
+### 5. Tag Automation Enhancement
+**Status**: 🔄 Pending  
+**Description**: Automate application of `cost_center` and `owner_email` tags. These tags are defined in `tag_categories` but not automatically applied by the module. Currently removed from example configurations as they are not automatically applied.  
+**Action Items**:
+- [ ] Add module variables for `cost_center` and `owner_email` (or `owner`)
+- [ ] Create tag associations for `cost_center` and `owner` tags similar to existing `environment` and `project` tags
+- [ ] Apply tags to databases, schemas, warehouses, and roles when `auto_apply_tags = true`
+- [ ] Update examples to include these variables once automation is implemented
+- [ ] Update documentation to reflect automatic tag application
+
+**Files to Update**: `tags.tf`, `variables.tf`, `examples/*/variables.tf`, `examples/*/terraform.tfvars.example`
+
+### 6. Testing
 - [ ] Create unit tests for each resource type
 - [ ] Create integration tests
 - [ ] Add Terraform native tests (`.tftest.hcl` files)
@@ -168,9 +180,9 @@
 |----------|-----------|-------|----------|
 | Critical Issues | 6/6 | 6 | 100% ✅ |
 | High Priority | 3/7 | 7 | 43% 🟡 |
-| Medium Priority | 1/7 | 7 | 14% 🔴 |
+| Medium Priority | 1/8 | 8 | 13% 🔴 |
 | Low Priority | 0/9 | 9 | 0% 🔴 |
-| **Overall** | **10/29** | **29** | **34%** |
+| **Overall** | **10/30** | **30** | **33%** |
 
 ---
 
