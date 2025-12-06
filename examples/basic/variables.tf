@@ -38,15 +38,6 @@ variable "environment" {
   }
 }
 
-# Tagging Variables
-variable "cost_center" {
-  description = "Cost center for billing"
-  type        = string
-  default     = "engineering"
-}
-
-variable "owner_email" {
-  description = "Email of the resource owner"
-  type        = string
-  default     = "data-team@example.com"
-} 
+# Note: cost_center and owner_email removed - these tags are defined in tag_categories
+# but not automatically applied by the module. To use them, add tag associations manually
+# or extend the module to support them. 

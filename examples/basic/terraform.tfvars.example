@@ -11,5 +11,4 @@ project_name = "analytics"
 environment  = "dev"
 
 # Tagging
-cost_center = "data-engineering"
-owner_email = "data-team@company.com" 
+# Note: cost_center and owner_email removed - these tags are not automatically applied by the module 

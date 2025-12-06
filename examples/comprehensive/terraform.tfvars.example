@@ -18,8 +18,7 @@ environment  = "dev"
 
 # Optional: Organization Details
 team_name    = "data-platform"
-cost_center  = "engineering"
-owner_email  = "data-team@company.com"
+# Note: cost_center and owner_email removed - these tags are not automatically applied by the module
 
 # Optional: Resource Limits
 data_retention_days  = 7
