@@ -4,6 +4,11 @@ on:
   pull_request:
     types: [opened, edited, synchronize, reopened]
 
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
 jobs:
   commitlint:
     name: Validate Commit Messages
@@ -25,7 +30,10 @@ jobs:
 
       - name: Validate Commits
         run: |
-          echo "module.exports = {extends: ['@commitlint/config-conventional']}" > commitlint.config.js
+          # Use existing commitlint.config.js if it exists, otherwise create a basic one
+          if [ ! -f commitlint.config.js ]; then
+            echo "module.exports = {extends: ['@commitlint/config-conventional'], rules: {'body-max-line-length': [2, 'always', 120]}}" > commitlint.config.js
+          fi
           npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
 
   pr-title:
@@ -50,11 +58,12 @@ jobs:
             chore
             revert
           requireScope: false
-          subjectPattern: ^[A-Z].+$
+          # Allow version numbers and other patterns at start of subject
+          subjectPattern: ^[A-Z0-9].+$
           subjectPatternError: |
             The subject "{subject}" found in the pull request title "{title}"
             doesn't match the configured pattern. Please ensure that the subject
-            starts with an uppercase letter.
+            starts with an uppercase letter or number.
 
   pr-size:
     name: Check PR Size
@@ -78,10 +87,15 @@ jobs:
   conventional-pr:
     name: Conventional PR Check
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
     steps:
       - name: PR Description Check
         uses: actions/github-script@v7
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const pr = context.payload.pull_request;
             const body = pr.body || '';
@@ -101,30 +115,40 @@ jobs:
             if (missingSections.length > 0) {
               core.setFailed(`PR description is missing required sections: ${missingSections.join(', ')}`);
               
-              // Add comment to PR
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: pr.number,
-                body: `❌ **PR Validation Failed**\n\nYour PR description is missing the following required sections:\n${missingSections.map(s => `- ${s}`).join('\n')}\n\nPlease update your PR description to include all required sections.`
-              });
+              // Try to add comment to PR (may fail if permissions insufficient)
+              try {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.number,
+                  body: `❌ **PR Validation Failed**\n\nYour PR description is missing the following required sections:\n${missingSections.map(s => `- ${s}`).join('\n')}\n\nPlease update your PR description to include all required sections.`
+                });
+              } catch (error) {
+                core.warning(`Could not add comment to PR: ${error.message}`);
+              }
             }
             
             // Check for breaking changes
             if (body.toLowerCase().includes('breaking change')) {
-              await github.rest.issues.addLabels({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: pr.number,
-                labels: ['breaking-change']
-              });
+              try {
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.number,
+                  labels: ['breaking-change']
+                });
+              } catch (error) {
+                core.warning(`Could not add label: ${error.message}`);
+              }
             }
 
   auto-assign:
     name: Auto Assign Reviewers
     runs-on: ubuntu-latest
+    if: false  # Disabled - action version not found, configure manually if needed
     steps:
       - name: Auto Assign
-        uses: kentaro-m/auto-assign-action@v1.2.5
+        uses: kentaro-m/auto-assign-action@v1.2.0
+        continue-on-error: true
         with:
           configuration-path: '.github/auto_assign.yml' 
