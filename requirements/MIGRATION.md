@@ -253,7 +253,7 @@ variable "roles" {
 
 **New YAML Approach:**
 ```yaml
-# config/roles.yml
+# docs/config-patterns/examples/single-account/roles.yml (Documentation only)
 roles:
   functional:
     analyst:
@@ -286,7 +286,7 @@ warehouse_size = "LARGE"
 
 **New Approach:**
 ```yaml
-# config/environments.yml
+# docs/config-patterns/examples/single-account/environments.yml (Documentation only)
 environments:
   dev:
     account: "main"

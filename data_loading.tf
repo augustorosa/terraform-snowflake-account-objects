@@ -26,6 +26,12 @@ resource "snowflake_stage" "stages" {
 
   # Directory settings
   directory = each.value.directory
+
+  # Ensure database and schema exist before creating stage
+  depends_on = [
+    snowflake_database.databases,
+    snowflake_schema.schemas
+  ]
 }
 
 # Create file formats
@@ -58,4 +64,10 @@ resource "snowflake_file_format" "file_formats" {
   empty_field_as_null            = each.value.empty_field_as_null
   null_if                        = each.value.null_if
   encoding                       = each.value.encoding
+
+  # Ensure database and schema exist before creating file format
+  depends_on = [
+    snowflake_database.databases,
+    snowflake_schema.schemas
+  ]
 }

@@ -65,5 +65,5 @@ RAW → PREPARE → ANALYZE
 
 ## 🔗 Related Documentation
 - [Main README](../README.md)
-- [Configuration Examples](../config/examples/)
+- [Configuration Examples](../docs/config-patterns/examples/) (Documentation only - not implemented)
 - [Module Documentation](../modules/README.md) 

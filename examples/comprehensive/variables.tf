@@ -42,6 +42,13 @@ variable "snowflake_warehouse" {
   sensitive   = false
 }
 
+variable "snowflake_role" {
+  description = "Snowflake role to use for provider connection (defaults to ACCOUNTADMIN)"
+  type        = string
+  default     = "ACCOUNTADMIN"
+  sensitive   = false
+}
+
 # -----------------------------------------------------------------------------
 # Project Configuration
 # -----------------------------------------------------------------------------

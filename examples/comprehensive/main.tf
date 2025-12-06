@@ -28,7 +28,7 @@ provider "snowflake" {
   account_name      = var.snowflake_account
   user              = var.snowflake_username
   password          = var.snowflake_password
-  role              = "ACCOUNTADMIN"
+  role              = var.snowflake_role != null ? var.snowflake_role : "ACCOUNTADMIN"
   warehouse         = var.snowflake_warehouse != null ? var.snowflake_warehouse : null
 
   preview_features_enabled = var.preview_features_enabled
