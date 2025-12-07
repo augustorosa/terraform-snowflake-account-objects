@@ -80,18 +80,90 @@ module "snowflake_account" {
 }
 ```
 
+## 🔐 **Provider Configuration**
+
+Configure the Snowflake provider with your authentication method. **Never hardcode credentials**.
+
+### Option 1: Environment Variables (Recommended)
+
+```bash
+# Set these in your environment or CI/CD secrets
+export SNOWFLAKE_ORGANIZATION_NAME="MYORG"
+export SNOWFLAKE_ACCOUNT_NAME="MYACCOUNT"
+export SNOWFLAKE_USER="terraform_user"
+export SNOWFLAKE_PASSWORD="your_secure_password_or_pat_token"
+export SNOWFLAKE_ROLE="ACCOUNTADMIN"
+export SNOWFLAKE_WAREHOUSE="COMPUTE_WH"
+```
+
+```hcl
+# Terraform automatically picks up environment variables
+provider "snowflake" {
+  # No credentials needed - uses environment variables
+}
+
+module "snowflake_account" {
+  source = "augustorosa/account-objects/snowflake"
+  
+  project_name = "myproject"
+  environment  = "dev"
+}
+```
+
+### Option 2: Variables (for Terraform Cloud/Enterprise)
+
+```hcl
+# variables.tf
+variable "snowflake_user" {
+  type      = string
+  sensitive = true
+}
+
+variable "snowflake_password" {
+  type      = string
+  sensitive = true
+}
+
+# main.tf
+provider "snowflake" {
+  organization_name = "MYORG"
+  account_name      = "MYACCOUNT"
+  user              = var.snowflake_user
+  password          = var.snowflake_password
+  role              = "ACCOUNTADMIN"
+  warehouse         = "COMPUTE_WH"
+}
+```
+
+### Option 3: PAT Token Authentication
+
+```hcl
+provider "snowflake" {
+  organization_name = "MYORG"
+  account_name      = "MYACCOUNT"
+  user              = "TERRAFORM_SVC"
+  password          = var.pat_token  # PAT token acts as password
+  role              = "ACCOUNTADMIN"
+  warehouse         = "COMPUTE_WH"
+}
+```
+
+See [Security & Authentication](#-security--authentication) for detailed PAT and RSA key-pair setup.
+
 ## 📋 **Requirements**
 
 | Name | Version |
 |------|---------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.5.7 |
-| <a name="requirement_snowflake"></a> [snowflake](#requirement\_snowflake) | ~> 2.0 |
+| <a name="requirement_snowflake"></a> [snowflake](#requirement\_snowflake) | ~> 2.11.0 |
+
+**Note**: Version 2.11.0+ required for Personal Access Tokens (PAT). Use ~> 2.0 if only using RSA key-pair authentication.
 
 ## 🔧 **Providers**
 
 | Name | Version |
 |------|---------|
-| <a name="provider_snowflake"></a> [snowflake](#provider\_snowflake) | ~> 2.0 |
+| <a name="provider_snowflake"></a> [snowflake](#provider\_snowflake) | ~> 2.11.0 |
 
 ## 📦 **Resources**
 
@@ -226,13 +298,204 @@ When `auto_apply_tags = true` (default), the module automatically applies tags t
 | [`feature-flags/`](./examples/feature-flags/) | Demonstrates all available features | Feature evaluation, testing |
 | [`security-focused/`](./examples/security-focused/) | **NEW** Provider 2.7.0 security features | Enterprise security, compliance |
 
-## 🔒 **Security Considerations**
+## 🔒 **Security & Authentication**
+
+### Best Practices
 
 1. **Authentication**: Configure Snowflake provider at the calling level
 2. **No Hardcoded Passwords**: All sensitive values via variables
 3. **Key-Pair Auth**: Recommended for production environments
 4. **Least Privilege**: RBAC hierarchy enforces proper access control
-5. **Network Policies**: Future enhancement for IP restrictions
+5. **Network Policies**: IP restrictions and access control
+
+### Service User Authentication Methods
+
+The module supports two authentication methods for service users (automated systems, APIs, CI/CD pipelines):
+
+#### 1. Personal Access Tokens (PAT) - **RECOMMENDED** ✅
+
+**Pros**: Easy to manage, automatic rotation, role restrictions, no external key generation
+**Cons**: Requires Snowflake provider v2.11.0+
+
+**Setup**:
+
+```hcl
+module "snowflake_account" {
+  source = "augustorosa/account-objects/snowflake"
+  
+  # Enable PAT tokens
+  enable_pat_tokens = true
+  
+  # Create PAT tokens for service users
+  pat_tokens = {
+    "INGEST_SERVICE_PAT" = {
+      user_name        = "MYPROJECT_DEV_INGEST_SVC"  # Service user created elsewhere
+      comment          = "PAT token for data ingestion service"
+      days_to_expiry   = 90                          # Token expires in 90 days
+      disabled         = false
+      
+      # Security: Restrict token to specific roles
+      role_restriction = [
+        "MYPROJECT_DEV_INGEST_RL"
+      ]
+      
+      # Allow brief network policy bypass during token rotation
+      mins_to_bypass_network_policy_requirement = 10
+      
+      # Old tokens expire 24 hours after rotation
+      expire_rotated_token_after_hours = 24
+    }
+  }
+}
+
+# Access the token secret (sensitive output)
+output "pat_token" {
+  value     = module.snowflake_account.pat_tokens["INGEST_SERVICE_PAT"].token
+  sensitive = true
+}
+```
+
+**Usage in CI/CD**:
+
+```bash
+# Export as environment variable
+export SNOWFLAKE_PASSWORD="<pat_token_from_output>"
+
+# Or use in GitHub Actions secrets
+SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PAT_TOKEN }}
+```
+
+**Token Rotation**:
+```bash
+# Terraform automatically rotates on apply
+terraform apply  # Creates new token, old expires after 24hrs
+```
+
+#### 2. RSA Key-Pair Authentication
+
+**Pros**: No expiry, industry standard, more secure than passwords
+**Cons**: Requires external key generation, more complex setup
+
+**Step 1 - Generate RSA Key Pair**:
+
+```bash
+# Generate 2048-bit RSA private key
+openssl genrsa -out snowflake_private_key.pem 2048
+
+# Generate public key from private key
+openssl rsa -in snowflake_private_key.pem -pubout -out snowflake_public_key.pem
+
+# Optional: Encrypt private key with passphrase
+openssl genrsa -aes256 -out snowflake_private_key_encrypted.pem 2048
+
+# Remove headers/footers and newlines for Terraform
+grep -v "BEGIN PUBLIC KEY" snowflake_public_key.pem | \
+  grep -v "END PUBLIC KEY" | \
+  tr -d '\n' > snowflake_public_key_base64.txt
+```
+
+**Step 2 - Configure in Terraform**:
+
+```hcl
+module "snowflake_account" {
+  source = "augustorosa/account-objects/snowflake"
+  
+  # Enable RSA key-pair authentication
+  enable_key_pair_auth = true
+  
+  # Create service users with RSA keys
+  service_users = {
+    "MYPROJECT_API_SVC" = {
+      comment           = "API service user with RSA key-pair auth"
+      default_role      = "MYPROJECT_DEV_INGEST_RL"
+      default_warehouse = "COMPUTE_WH"
+      email             = "api-service@example.com"
+      
+      # Primary RSA public key (from Step 1)
+      rsa_public_key = file("snowflake_public_key_base64.txt")
+      
+      # Optional: Secondary key for rotation
+      rsa_public_key_2 = null
+      
+      # Optional: Account expiry
+      days_to_expiry = 365
+    }
+  }
+}
+```
+
+**Step 3 - Use Private Key in Applications**:
+
+```python
+# Python Snowflake Connector
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.backends import default_backend
+
+# Load private key
+with open("snowflake_private_key.pem", "rb") as key_file:
+    p_key = serialization.load_pem_private_key(
+        key_file.read(),
+        password=None,  # or passphrase if encrypted
+        backend=default_backend()
+    )
+
+# Connect to Snowflake
+conn = snowflake.connector.connect(
+    user='MYPROJECT_API_SVC',
+    account='MYORG-MYACCOUNT',
+    private_key=p_key,
+    warehouse='COMPUTE_WH',
+    database='DEV_RAW',
+    schema='PUBLIC'
+)
+```
+
+**Key Rotation**:
+
+```hcl
+# Set secondary key first
+service_users = {
+  "MYPROJECT_API_SVC" = {
+    rsa_public_key   = "OLD_KEY_BASE64"
+    rsa_public_key_2 = "NEW_KEY_BASE64"  # Add new key
+  }
+}
+
+# Apply and update applications to use new key
+terraform apply
+
+# Then remove old key
+service_users = {
+  "MYPROJECT_API_SVC" = {
+    rsa_public_key   = "NEW_KEY_BASE64"  # Old key is now primary
+    rsa_public_key_2 = null
+  }
+}
+```
+
+### Comparison
+
+| Feature | PAT Tokens | RSA Key-Pair |
+|---------|------------|--------------|
+| **Setup Complexity** | ⭐ Easy | ⭐⭐⭐ Complex |
+| **External Tools** | None | OpenSSL required |
+| **Rotation** | Automatic | Manual |
+| **Expiry** | Yes (configurable) | No |
+| **Role Restrictions** | ✅ Yes | ❌ No |
+| **Network Policy Bypass** | ✅ Yes | ❌ No |
+| **Provider Version** | v2.11.0+ | v2.0+ |
+| **Best For** | CI/CD, APIs, automation | Long-lived services |
+
+### Security Recommendations
+
+1. **Use PAT tokens** for most use cases (easier management, built-in security features)
+2. **Restrict PAT tokens** to specific roles using `role_restriction`
+3. **Rotate tokens regularly** (90 days recommended)
+4. **Store secrets securely** in HashiCorp Vault, AWS Secrets Manager, or GitHub Secrets
+5. **Never commit** private keys or tokens to version control
+6. **Use environment variables** for CI/CD authentication
+7. **Enable MFA** for human users (not service users)
+8. **Monitor token usage** via Snowflake query history
 
 ## 🧪 **Testing**
 
