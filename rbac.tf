@@ -446,3 +446,86 @@ resource "snowflake_grant_account_role" "custom_role_inheritance" {
     snowflake_account_role.custom_roles
   ]
 }
+
+# =============================================================================
+# ROLE OWNERSHIP - Best Practice Hierarchy
+# =============================================================================
+# Proper role ownership prevents ACCOUNTADMIN from being the default owner
+# and allows delegation of role management to project-specific admin roles
+
+# Transfer ownership of ADMIN role to SYSADMIN
+resource "snowflake_grant_ownership" "admin_role_to_sysadmin" {
+  count = var.enable_rbac && var.create_default_roles ? 1 : 0
+
+  account_role_name   = "SYSADMIN"
+  outbound_privileges = "COPY" # Preserve existing grants during ownership transfer
+
+  on {
+    object_type = "ROLE"
+    object_name = "${local.base_prefix}_ADMIN_ROLE"
+  }
+
+  depends_on = [
+    snowflake_account_role.functional_roles,
+    snowflake_grant_account_role.admin_to_sysadmin
+  ]
+}
+
+# Transfer ownership of READER role to ADMIN role
+resource "snowflake_grant_ownership" "reader_role_to_admin" {
+  count = var.enable_rbac && var.create_default_roles ? 1 : 0
+
+  account_role_name   = "${local.base_prefix}_ADMIN_ROLE"
+  outbound_privileges = "COPY" # Preserve existing grants during ownership transfer
+
+  on {
+    object_type = "ROLE"
+    object_name = "${local.base_prefix}_READER_ROLE"
+  }
+
+  depends_on = [
+    snowflake_account_role.functional_roles,
+    snowflake_grant_ownership.admin_role_to_sysadmin
+  ]
+}
+
+# Transfer ownership of WRITER role to ADMIN role
+resource "snowflake_grant_ownership" "writer_role_to_admin" {
+  count = var.enable_rbac && var.create_default_roles ? 1 : 0
+
+  account_role_name   = "${local.base_prefix}_ADMIN_ROLE"
+  outbound_privileges = "COPY" # Preserve existing grants during ownership transfer
+
+  on {
+    object_type = "ROLE"
+    object_name = "${local.base_prefix}_WRITER_ROLE"
+  }
+
+  depends_on = [
+    snowflake_account_role.functional_roles,
+    snowflake_grant_ownership.admin_role_to_sysadmin
+  ]
+}
+
+# Transfer ownership of data access roles to ADMIN role
+resource "snowflake_grant_ownership" "data_access_roles_to_admin" {
+  for_each = var.enable_rbac && var.create_default_roles ? toset([
+    "INGEST",
+    "TRANSFORM",
+    "ANALYSIS",
+    "SCIENTIST"
+  ]) : toset([])
+
+  account_role_name   = "${local.base_prefix}_ADMIN_ROLE"
+  outbound_privileges = "COPY" # Preserve existing grants during ownership transfer
+
+  on {
+    object_type = "ROLE"
+    object_name = "${local.base_prefix}_${each.key}_ROLE"
+  }
+
+  depends_on = [
+    snowflake_account_role.data_access_roles,
+    snowflake_grant_ownership.admin_role_to_sysadmin
+  ]
+}

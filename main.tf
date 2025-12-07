@@ -18,7 +18,7 @@ locals {
   env_prefix = {
     dev  = "DEV"
     qa   = "QA"
-    prod = "PROD"
+    prod = "PRD"
   }
 
   # Construct base naming components

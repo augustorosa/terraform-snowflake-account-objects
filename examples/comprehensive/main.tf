@@ -247,3 +247,62 @@ module "snowflake_account_objects" {
   }
 
 }
+
+# =============================================================================
+# SERVICE USER FOR DATA INGESTION
+# =============================================================================
+
+# Create X-SMALL warehouse for the service user
+resource "snowflake_warehouse" "ingest_warehouse" {
+  name              = "${upper(var.project_name)}_${upper(var.environment)}_INGEST_WH"
+  warehouse_size    = "X-SMALL"
+  auto_suspend      = 60
+  auto_resume       = true
+  min_cluster_count = 1
+  max_cluster_count = 1
+
+  comment = "Ingest warehouse for ${var.project_name} ${var.environment}"
+}
+
+# Service user for data ingestion
+resource "snowflake_user" "ingest_service" {
+  name = "${upper(var.project_name)}_${upper(var.environment)}_INGEST_SVC"
+
+  # Default role for ingestion (access to RAW layer only)
+  default_role = module.snowflake_account_objects.data_access_roles["INGEST"].name
+
+  # Default warehouse for the service user
+  default_warehouse = snowflake_warehouse.ingest_warehouse.name
+
+  comment = "Service user for data ingestion - TYPE must be set to SERVICE via ALTER USER"
+
+  # After creation, run: ALTER USER <name> SET TYPE = 'SERVICE';
+  # Then configure RSA key-pair for authentication
+}
+
+# Grant INGEST role to the service user
+resource "snowflake_grant_account_role" "ingest_role_to_service_user" {
+  role_name = module.snowflake_account_objects.data_access_roles["INGEST"].name
+  user_name = snowflake_user.ingest_service.name
+
+  depends_on = [
+    module.snowflake_account_objects,
+    snowflake_user.ingest_service
+  ]
+}
+
+# Grant warehouse usage to the INGEST role
+resource "snowflake_grant_privileges_to_account_role" "warehouse_usage_to_ingest_role" {
+  account_role_name = module.snowflake_account_objects.data_access_roles["INGEST"].name
+  privileges        = ["USAGE", "OPERATE"]
+
+  on_account_object {
+    object_type = "WAREHOUSE"
+    object_name = snowflake_warehouse.ingest_warehouse.name
+  }
+
+  depends_on = [
+    module.snowflake_account_objects,
+    snowflake_warehouse.ingest_warehouse
+  ]
+}
