@@ -139,3 +139,34 @@ output "naming_convention" {
     roles          = "${upper(substr(var.environment, 0, 3))}_${upper(var.project_name)}_*_ROLE"
   }
 }
+
+# -----------------------------------------------------------------------------
+# Service User & Authentication Outputs
+# -----------------------------------------------------------------------------
+
+output "service_user" {
+  description = "Service user for data ingestion"
+  value = {
+    name     = snowflake_user.ingest_service.name
+    role     = snowflake_user.ingest_service.default_role
+    warehouse = snowflake_user.ingest_service.default_warehouse
+    post_setup_sql = "ALTER USER ${snowflake_user.ingest_service.name} SET TYPE = 'SERVICE';"
+  }
+}
+
+output "pat_token" {
+  description = "Personal Access Token for service user (SENSITIVE - Store securely!)"
+  value       = snowflake_user_programmatic_access_token.ingest_service_pat.token
+  sensitive   = true
+}
+
+output "pat_token_info" {
+  description = "PAT token configuration and usage"
+  value = {
+    token_name       = snowflake_user_programmatic_access_token.ingest_service_pat.name
+    user_name        = snowflake_user_programmatic_access_token.ingest_service_pat.user
+    role_restriction = snowflake_user_programmatic_access_token.ingest_service_pat.role_restriction
+    days_to_expiry   = snowflake_user_programmatic_access_token.ingest_service_pat.days_to_expiry
+    usage_example    = "export SNOWFLAKE_PASSWORD=$(terraform output -raw pat_token)"
+  }
+}

@@ -312,3 +312,31 @@ resource "snowflake_grant_privileges_to_account_role" "warehouse_usage_to_ingest
     snowflake_warehouse.ingest_warehouse
   ]
 }
+
+# =============================================================================
+# PAT TOKEN FOR SERVICE USER
+# =============================================================================
+
+# Create Personal Access Token for the service user
+resource "snowflake_user_programmatic_access_token" "ingest_service_pat" {
+  name    = "${upper(var.project_name)}_${upper(var.environment)}_INGEST_PAT"
+  user    = snowflake_user.ingest_service.name
+  comment = "PAT token for data ingestion service"
+
+  # Token expiry and lifecycle
+  days_to_expiry                   = 90
+  disabled                         = false
+  expire_rotated_token_after_hours = 24
+
+  # Security: Restrict token to INGEST role only
+  role_restriction = module.snowflake_account_objects.data_access_roles["INGEST"].name
+
+  # Allow brief network policy bypass during token rotation
+  mins_to_bypass_network_policy_requirement = 10
+
+  depends_on = [
+    snowflake_user.ingest_service,
+    snowflake_grant_account_role.ingest_role_to_service_user,
+    module.snowflake_account_objects
+  ]
+}

@@ -519,19 +519,19 @@ resource "snowflake_grant_ownership" "writer_role_to_admin" {
 
 # Transfer ownership of data access roles to ADMIN role
 resource "snowflake_grant_ownership" "data_access_roles_to_admin" {
-  for_each = var.enable_rbac && var.create_default_roles ? toset([
+  for_each = local.should_create_data_access_roles ? toset([
     "INGEST",
     "TRANSFORM",
     "ANALYSIS",
     "SCIENTIST"
   ]) : toset([])
 
-  account_role_name   = "${local.base_prefix}_ADMIN_ROLE"
+  account_role_name   = "${local.base_prefix}_ADMIN_RL"
   outbound_privileges = "COPY" # Preserve existing grants during ownership transfer
 
   on {
     object_type = "ROLE"
-    object_name = "${local.base_prefix}_${each.key}_ROLE"
+    object_name = "${local.base_prefix}_${each.key}_RL"
   }
 
   depends_on = [
