@@ -43,7 +43,7 @@ resource "snowflake_user_programmatic_access_token" "pat_tokens" {
   expire_rotated_token_after_hours = each.value.expire_rotated_token_after_hours
 
   # Security restrictions
-  role_restriction                          = length(each.value.role_restriction) > 0 ? each.value.role_restriction : null
+  role_restriction                          = each.value.role_restriction
   mins_to_bypass_network_policy_requirement = each.value.mins_to_bypass_network_policy_requirement
 
   # Depend on service users if they're being created

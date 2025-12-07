@@ -334,10 +334,8 @@ module "snowflake_account" {
       days_to_expiry   = 90                          # Token expires in 90 days
       disabled         = false
       
-      # Security: Restrict token to specific roles
-      role_restriction = [
-        "MYPROJECT_DEV_INGEST_RL"
-      ]
+      # Security: Restrict token to a specific role
+      role_restriction = "MYPROJECT_DEV_INGEST_RL"  # Single role name
       
       # Allow brief network policy bypass during token rotation
       mins_to_bypass_network_policy_requirement = 10

@@ -562,7 +562,7 @@ variable "pat_tokens" {
     comment                                   = optional(string, "PAT token managed by Terraform")
     days_to_expiry                            = optional(number, 90)
     disabled                                  = optional(bool, false)
-    role_restriction                          = optional(list(string), [])
+    role_restriction                          = optional(string, null)  # Single role name, not a list
     mins_to_bypass_network_policy_requirement = optional(number, null)
     expire_rotated_token_after_hours          = optional(number, 24)
   }))
