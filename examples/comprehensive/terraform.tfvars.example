@@ -24,12 +24,37 @@ team_name    = "data-platform"
 data_retention_days  = 7
 monthly_credit_quota = 100
 
-# Optional: Network Policies (set to true to enable)
-enable_network_policies = false
-allowed_ip_ranges = ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]
+# =============================================================================
+# FEATURE FLAGS - ENABLE EVERYTHING FOR COMPREHENSIVE DEMO
+# =============================================================================
 
-# Optional: Tag Database Configuration
-use_central_db_for_tags = true  # Use ULONO.TAGS instead of DEV_ULONO_TAGS_DB
+# Core Features
+enable_rbac                    = true
+enable_tagging                 = true
+enable_databases               = true
+enable_warehouses              = true
+enable_data_loading            = true
+enable_resource_monitors       = true
+
+# Security Features
+enable_network_policies        = true
+enable_auto_classification     = true
+enable_authentication_policies = true
+enable_key_pair_auth           = true
+enable_pat_tokens              = true
+enable_external_oauth          = false  # Requires external OAuth provider setup
+
+# Database Organization
+enable_central_settings_db     = true
+use_central_db_for_tags        = true  # Tags in ULONO.TAGS instead of DEV_ULONO_TAGS_DB
+
+# Role Creation
+create_functional_roles        = true  # READER, WRITER, ADMIN
+create_data_access_roles       = true  # INGEST, TRANSFORM, ANALYSIS, SCIENTIST
+create_default_roles           = true  # Backward compatibility
+
+# Network Configuration
+allowed_ip_ranges = ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]
 
 # Optional: Preview Features (required for stages, file formats, and network rules)
 preview_features_enabled = [
