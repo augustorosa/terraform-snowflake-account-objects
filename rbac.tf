@@ -467,7 +467,7 @@ resource "snowflake_grant_ownership" "admin_role_to_sysadmin" {
 
   depends_on = [
     snowflake_account_role.functional_roles,
-    snowflake_grant_account_role.admin_to_sysadmin
+    snowflake_grant_account_role.project_admin_to_sysadmin
   ]
 }
 
