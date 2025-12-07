@@ -80,6 +80,62 @@ module "snowflake_account" {
 }
 ```
 
+## 🚀 **Initial Account Setup (Bootstrap)**
+
+When setting up a **blank Snowflake account** for the first time, follow this two-phase approach:
+
+### Phase 1: Initial Deployment (Password Authentication)
+
+**Use your ACCOUNTADMIN password for the first deployment.** This is required because:
+- PAT tokens cannot create other PAT tokens (Snowflake security restriction)
+- You need password auth to create the initial service users and their PAT tokens
+
+```hcl
+# terraform.tfvars - INITIAL SETUP
+organization_name  = "YOUR_ORG"
+snowflake_account  = "YOUR_ACCOUNT"
+snowflake_username = "YOUR_ADMIN_USER"
+snowflake_password = "YourActualPassword"  # Use password, NOT a PAT token
+```
+
+```bash
+# Run initial deployment
+cd examples/comprehensive
+terraform init
+terraform apply
+
+# Save the PAT token securely (if PAT token resource is enabled)
+terraform output -raw pat_token > ~/.snowflake/terraform_pat_token.txt
+chmod 600 ~/.snowflake/terraform_pat_token.txt
+```
+
+### Phase 2: Day-to-Day Operations (PAT Authentication)
+
+After initial setup, switch to PAT token authentication for regular operations:
+
+```hcl
+# terraform.tfvars - DAY-TO-DAY OPERATIONS
+organization_name  = "YOUR_ORG"
+snowflake_account  = "YOUR_ACCOUNT"
+snowflake_username = "YOUR_SERVICE_USER"
+snowflake_password = "eyJraWQiOi..."  # Your PAT token from Phase 1
+```
+
+### What Each Auth Method Can Do
+
+| Resource Type | Password Auth | PAT Auth |
+|--------------|---------------|----------|
+| Roles | ✅ Create/Modify | ✅ Create/Modify |
+| Databases | ✅ Create/Modify | ✅ Create/Modify |
+| Warehouses | ✅ Create/Modify | ✅ Create/Modify |
+| Schemas | ✅ Create/Modify | ✅ Create/Modify |
+| Tags | ✅ Create/Modify | ✅ Create/Modify |
+| Users | ✅ Create/Modify | ✅ Create/Modify |
+| **PAT Tokens** | ✅ Create/Modify | ❌ **Cannot** |
+| Network Policies | ✅ Create/Modify | ✅ Create/Modify |
+
+> ⚠️ **Important**: If you need to create or rotate PAT tokens after initial setup, temporarily switch back to password authentication.
+
 ## 🔐 **Provider Configuration**
 
 Configure the Snowflake provider with your authentication method. **Never hardcode credentials**.
@@ -484,16 +540,33 @@ service_users = {
 | **Provider Version** | v2.11.0+ | v2.0+ |
 | **Best For** | CI/CD, APIs, automation | Long-lived services |
 
+### Important: PAT Token Limitation
+
+⚠️ **Snowflake Security Restriction**: PAT tokens cannot create or modify other PAT tokens.
+
+```
+Error: 099413 (38002): Cannot use programmatic access token as the 
+authentication method to modify other programmatic access tokens.
+```
+
+**This means**:
+- Use **password auth** for initial account setup (to create PAT tokens)
+- Use **PAT auth** for day-to-day operations (can't touch PAT resources)
+- To rotate PAT tokens, temporarily switch back to password auth
+
+See [Initial Account Setup (Bootstrap)](#-initial-account-setup-bootstrap) for the recommended workflow.
+
 ### Security Recommendations
 
-1. **Use PAT tokens** for most use cases (easier management, built-in security features)
-2. **Restrict PAT tokens** to specific roles using `role_restriction`
-3. **Rotate tokens regularly** (90 days recommended)
-4. **Store secrets securely** in HashiCorp Vault, AWS Secrets Manager, or GitHub Secrets
-5. **Never commit** private keys or tokens to version control
-6. **Use environment variables** for CI/CD authentication
-7. **Enable MFA** for human users (not service users)
-8. **Monitor token usage** via Snowflake query history
+1. **Use password auth** for initial setup and PAT token management
+2. **Use PAT tokens** for day-to-day operations (easier, safer than passwords in CI/CD)
+3. **Restrict PAT tokens** to specific roles using `role_restriction`
+4. **Rotate tokens regularly** (90 days recommended)
+5. **Store secrets securely** in HashiCorp Vault, AWS Secrets Manager, or GitHub Secrets
+6. **Never commit** private keys or tokens to version control
+7. **Use environment variables** for CI/CD authentication
+8. **Enable MFA** for human users (not service users)
+9. **Monitor token usage** via Snowflake query history
 
 ## 🧪 **Testing**
 
