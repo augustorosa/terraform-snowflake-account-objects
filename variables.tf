@@ -84,25 +84,25 @@ variable "enable_network_policies" {
 variable "enable_auto_classification" {
   description = "Enable automatic sensitive data classification (requires Enterprise Edition)"
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "enable_key_pair_auth" {
-  description = "Enable RSA key-pair authentication for service users"
+  description = "Enable RSA key-pair authentication for service users (always available for service users)"
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "enable_pat_tokens" {
-  description = "Enable Personal Access Token (PAT) creation for service users"
+  description = "Enable Personal Access Token (PAT) creation for service users (always available for service users)"
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "enable_authentication_policies" {
   description = "Enable authentication policies for enhanced security controls"
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "enable_external_oauth" {
@@ -128,17 +128,29 @@ variable "central_settings_data_retention_days" {
 }
 
 variable "use_central_db_for_tags" {
-  description = "Use central settings database for tag definitions instead of legacy tag database"
+  description = "Use central settings database for tag definitions instead of legacy tag database (automatically true when enable_central_settings_db is true)"
   type        = bool
-  default     = false # Set to true to migrate tags to central database
+  default     = true # Uses ULONO.TAGS instead of ENV_PROJECT_TAGS_DB
 }
 
 # =============================================================================
 # RBAC CONFIGURATION
 # =============================================================================
 
+variable "create_functional_roles" {
+  description = "Create default functional roles (READER, WRITER, ADMIN)"
+  type        = bool
+  default     = true
+}
+
+variable "create_data_access_roles" {
+  description = "Create default data access roles (INGEST, TRANSFORM, ANALYSIS, SCIENTIST)"
+  type        = bool
+  default     = true
+}
+
 variable "create_default_roles" {
-  description = "Create default functional and data access roles"
+  description = "DEPRECATED: Use create_functional_roles and create_data_access_roles instead. This variable is kept for backward compatibility."
   type        = bool
   default     = true
 }

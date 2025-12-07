@@ -18,11 +18,21 @@
 # =============================================================================
 
 # =============================================================================
+# LOCAL VARIABLES FOR BACKWARD COMPATIBILITY
+# =============================================================================
+
+locals {
+  # Backward compatibility: create_default_roles controls both if new flags not set
+  should_create_functional_roles   = var.enable_rbac && (var.create_functional_roles || var.create_default_roles)
+  should_create_data_access_roles  = var.enable_rbac && (var.create_data_access_roles || var.create_default_roles)
+}
+
+# =============================================================================
 # PER-ENVIRONMENT FUNCTIONAL ROLES
 # =============================================================================
 
 resource "snowflake_account_role" "functional_roles" {
-  for_each = var.enable_rbac && var.create_default_roles ? toset([
+  for_each = local.should_create_functional_roles ? toset([
     "READER", # Can read data
     "WRITER", # Can read and write data
     "ADMIN"   # Can read, write, and administer
@@ -37,7 +47,7 @@ resource "snowflake_account_role" "functional_roles" {
 # =============================================================================
 
 resource "snowflake_account_role" "data_access_roles" {
-  for_each = var.enable_rbac && var.create_default_roles ? toset([
+  for_each = local.should_create_data_access_roles ? toset([
     "INGEST",    # Access to RAW layer only (for ingestion)
     "TRANSFORM", # Access to RAW (read) + INT+ANL (write)
     "ANALYSIS",  # Access to ANL layer only (read)
@@ -53,7 +63,7 @@ resource "snowflake_account_role" "data_access_roles" {
 # =============================================================================
 
 resource "snowflake_account_role" "project_admin" {
-  count = var.enable_rbac && var.create_default_roles ? 1 : 0
+  count = local.should_create_functional_roles ? 1 : 0
 
   name    = "${upper(var.project_name)}_ADMIN_RL"
   comment = "Cross-environment project administrator role - Full access to all environments - Managed by Terraform"
@@ -76,7 +86,7 @@ resource "snowflake_account_role" "custom_roles" {
 
 # READER → WRITER (READER inherits from WRITER)
 resource "snowflake_grant_account_role" "reader_to_writer" {
-  count = var.enable_rbac && var.create_default_roles ? 1 : 0
+  count = local.should_create_functional_roles ? 1 : 0
 
   role_name        = snowflake_account_role.functional_roles["READER"].name
   parent_role_name = snowflake_account_role.functional_roles["WRITER"].name
@@ -86,7 +96,7 @@ resource "snowflake_grant_account_role" "reader_to_writer" {
 
 # WRITER → ADMIN (WRITER inherits from ADMIN)
 resource "snowflake_grant_account_role" "writer_to_admin" {
-  count = var.enable_rbac && var.create_default_roles ? 1 : 0
+  count = local.should_create_functional_roles ? 1 : 0
 
   role_name        = snowflake_account_role.functional_roles["WRITER"].name
   parent_role_name = snowflake_account_role.functional_roles["ADMIN"].name
@@ -100,7 +110,7 @@ resource "snowflake_grant_account_role" "writer_to_admin" {
 
 # READER gets ANALYSIS_RL (read-only access to ANL layer)
 resource "snowflake_grant_account_role" "analysis_to_reader" {
-  count = var.enable_rbac && var.create_default_roles ? 1 : 0
+  count = local.should_create_functional_roles ? 1 : 0
 
   role_name        = snowflake_account_role.data_access_roles["ANALYSIS"].name
   parent_role_name = snowflake_account_role.functional_roles["READER"].name
@@ -114,7 +124,7 @@ resource "snowflake_grant_account_role" "analysis_to_reader" {
 # WRITER gets TRANSFORM_RL (read RAW, write INT+ANL)
 # Note: WRITER also inherits ANALYSIS_RL via READER inheritance
 resource "snowflake_grant_account_role" "transform_to_writer" {
-  count = var.enable_rbac && var.create_default_roles ? 1 : 0
+  count = local.should_create_functional_roles ? 1 : 0
 
   role_name        = snowflake_account_role.data_access_roles["TRANSFORM"].name
   parent_role_name = snowflake_account_role.functional_roles["WRITER"].name
@@ -127,7 +137,7 @@ resource "snowflake_grant_account_role" "transform_to_writer" {
 
 # ADMIN gets ALL data access roles
 resource "snowflake_grant_account_role" "ingest_to_admin" {
-  count = var.enable_rbac && var.create_default_roles ? 1 : 0
+  count = local.should_create_functional_roles ? 1 : 0
 
   role_name        = snowflake_account_role.data_access_roles["INGEST"].name
   parent_role_name = snowflake_account_role.functional_roles["ADMIN"].name
@@ -139,7 +149,7 @@ resource "snowflake_grant_account_role" "ingest_to_admin" {
 }
 
 resource "snowflake_grant_account_role" "transform_to_admin" {
-  count = var.enable_rbac && var.create_default_roles ? 1 : 0
+  count = local.should_create_functional_roles ? 1 : 0
 
   role_name        = snowflake_account_role.data_access_roles["TRANSFORM"].name
   parent_role_name = snowflake_account_role.functional_roles["ADMIN"].name
@@ -151,7 +161,7 @@ resource "snowflake_grant_account_role" "transform_to_admin" {
 }
 
 resource "snowflake_grant_account_role" "analysis_to_admin" {
-  count = var.enable_rbac && var.create_default_roles ? 1 : 0
+  count = local.should_create_functional_roles ? 1 : 0
 
   role_name        = snowflake_account_role.data_access_roles["ANALYSIS"].name
   parent_role_name = snowflake_account_role.functional_roles["ADMIN"].name
@@ -163,7 +173,7 @@ resource "snowflake_grant_account_role" "analysis_to_admin" {
 }
 
 resource "snowflake_grant_account_role" "scientist_to_admin" {
-  count = var.enable_rbac && var.create_default_roles ? 1 : 0
+  count = local.should_create_functional_roles ? 1 : 0
 
   role_name        = snowflake_account_role.data_access_roles["SCIENTIST"].name
   parent_role_name = snowflake_account_role.functional_roles["ADMIN"].name
@@ -180,7 +190,7 @@ resource "snowflake_grant_account_role" "scientist_to_admin" {
 
 # PROJECT_ADMIN_RL inherits from current environment's ADMIN_RL
 resource "snowflake_grant_account_role" "env_admin_to_project_admin" {
-  count = var.enable_rbac && var.create_default_roles ? 1 : 0
+  count = local.should_create_functional_roles ? 1 : 0
 
   role_name        = snowflake_account_role.functional_roles["ADMIN"].name
   parent_role_name = snowflake_account_role.project_admin[0].name
@@ -193,7 +203,7 @@ resource "snowflake_grant_account_role" "env_admin_to_project_admin" {
 
 # PROJECT_ADMIN_RL inherits to SYSADMIN
 resource "snowflake_grant_account_role" "project_admin_to_sysadmin" {
-  count = var.enable_rbac && var.create_default_roles ? 1 : 0
+  count = local.should_create_functional_roles ? 1 : 0
 
   role_name        = snowflake_account_role.project_admin[0].name
   parent_role_name = "SYSADMIN"
@@ -237,7 +247,7 @@ locals {
 
 # INGEST_RL: USAGE on RAW databases only
 resource "snowflake_grant_privileges_to_account_role" "ingest_raw_usage" {
-  for_each = var.enable_rbac && var.create_default_roles && var.enable_databases ? local.raw_databases : {}
+  for_each = local.should_create_data_access_roles && var.enable_databases ? local.raw_databases : {}
 
   privileges        = ["USAGE"]
   account_role_name = snowflake_account_role.data_access_roles["INGEST"].name
@@ -254,7 +264,7 @@ resource "snowflake_grant_privileges_to_account_role" "ingest_raw_usage" {
 
 # INGEST_RL: INSERT, CREATE TABLE, CREATE STAGE on RAW schemas
 resource "snowflake_grant_privileges_to_account_role" "ingest_raw_schema_privileges" {
-  for_each = var.enable_rbac && var.create_default_roles && var.enable_databases ? {
+  for_each = local.should_create_data_access_roles && var.enable_databases ? {
     for schema_key, schema in local.all_schemas :
     schema_key => schema
     if contains(keys(local.raw_databases), schema.database_key)
@@ -275,7 +285,7 @@ resource "snowflake_grant_privileges_to_account_role" "ingest_raw_schema_privile
 
 # TRANSFORM_RL: USAGE on RAW, INT, ANL databases
 resource "snowflake_grant_privileges_to_account_role" "transform_database_usage" {
-  for_each = var.enable_rbac && var.create_default_roles && var.enable_databases ? merge(
+  for_each = local.should_create_data_access_roles && var.enable_databases ? merge(
     local.raw_databases,
     local.int_databases,
     local.anl_databases
@@ -296,7 +306,7 @@ resource "snowflake_grant_privileges_to_account_role" "transform_database_usage"
 
 # TRANSFORM_RL: SELECT on RAW schemas, ALL on INT+ANL schemas
 resource "snowflake_grant_privileges_to_account_role" "transform_raw_schema_select" {
-  for_each = var.enable_rbac && var.create_default_roles && var.enable_databases ? {
+  for_each = local.should_create_data_access_roles && var.enable_databases ? {
     for schema_key, schema in local.all_schemas :
     schema_key => schema
     if contains(keys(local.raw_databases), schema.database_key)
@@ -316,7 +326,7 @@ resource "snowflake_grant_privileges_to_account_role" "transform_raw_schema_sele
 }
 
 resource "snowflake_grant_privileges_to_account_role" "transform_int_anl_schema_all" {
-  for_each = var.enable_rbac && var.create_default_roles && var.enable_databases ? {
+  for_each = local.should_create_data_access_roles && var.enable_databases ? {
     for schema_key, schema in local.all_schemas :
     schema_key => schema
     if contains(keys(local.int_databases), schema.database_key) || contains(keys(local.anl_databases), schema.database_key)
@@ -337,7 +347,7 @@ resource "snowflake_grant_privileges_to_account_role" "transform_int_anl_schema_
 
 # ANALYSIS_RL: USAGE on ANL databases only
 resource "snowflake_grant_privileges_to_account_role" "analysis_anl_usage" {
-  for_each = var.enable_rbac && var.create_default_roles && var.enable_databases ? local.anl_databases : {}
+  for_each = local.should_create_data_access_roles && var.enable_databases ? local.anl_databases : {}
 
   privileges        = ["USAGE"]
   account_role_name = snowflake_account_role.data_access_roles["ANALYSIS"].name
@@ -354,7 +364,7 @@ resource "snowflake_grant_privileges_to_account_role" "analysis_anl_usage" {
 
 # ANALYSIS_RL: SELECT on ANL schemas
 resource "snowflake_grant_privileges_to_account_role" "analysis_anl_schema_select" {
-  for_each = var.enable_rbac && var.create_default_roles && var.enable_databases ? {
+  for_each = local.should_create_data_access_roles && var.enable_databases ? {
     for schema_key, schema in local.all_schemas :
     schema_key => schema
     if contains(keys(local.anl_databases), schema.database_key)
@@ -375,7 +385,7 @@ resource "snowflake_grant_privileges_to_account_role" "analysis_anl_schema_selec
 
 # SCIENTIST_RL: USAGE on RAW, INT, ANL databases (all read-only)
 resource "snowflake_grant_privileges_to_account_role" "scientist_database_usage" {
-  for_each = var.enable_rbac && var.create_default_roles && var.enable_databases ? merge(
+  for_each = local.should_create_data_access_roles && var.enable_databases ? merge(
     local.raw_databases,
     local.int_databases,
     local.anl_databases
@@ -396,7 +406,7 @@ resource "snowflake_grant_privileges_to_account_role" "scientist_database_usage"
 
 # SCIENTIST_RL: SELECT on all schemas (RAW, INT, ANL)
 resource "snowflake_grant_privileges_to_account_role" "scientist_schema_select" {
-  for_each = var.enable_rbac && var.create_default_roles && var.enable_databases ? {
+  for_each = local.should_create_data_access_roles && var.enable_databases ? {
     for schema_key, schema in local.all_schemas :
     schema_key => schema
     if contains(keys(local.raw_databases), schema.database_key) ||
@@ -455,7 +465,7 @@ resource "snowflake_grant_account_role" "custom_role_inheritance" {
 
 # Transfer ownership of ADMIN role to SYSADMIN
 resource "snowflake_grant_ownership" "admin_role_to_sysadmin" {
-  count = var.enable_rbac && var.create_default_roles ? 1 : 0
+  count = local.should_create_functional_roles ? 1 : 0
 
   account_role_name   = "SYSADMIN"
   outbound_privileges = "COPY" # Preserve existing grants during ownership transfer
@@ -473,7 +483,7 @@ resource "snowflake_grant_ownership" "admin_role_to_sysadmin" {
 
 # Transfer ownership of READER role to ADMIN role
 resource "snowflake_grant_ownership" "reader_role_to_admin" {
-  count = var.enable_rbac && var.create_default_roles ? 1 : 0
+  count = local.should_create_functional_roles ? 1 : 0
 
   account_role_name   = "${local.base_prefix}_ADMIN_ROLE"
   outbound_privileges = "COPY" # Preserve existing grants during ownership transfer
@@ -491,7 +501,7 @@ resource "snowflake_grant_ownership" "reader_role_to_admin" {
 
 # Transfer ownership of WRITER role to ADMIN role
 resource "snowflake_grant_ownership" "writer_role_to_admin" {
-  count = var.enable_rbac && var.create_default_roles ? 1 : 0
+  count = local.should_create_functional_roles ? 1 : 0
 
   account_role_name   = "${local.base_prefix}_ADMIN_ROLE"
   outbound_privileges = "COPY" # Preserve existing grants during ownership transfer
