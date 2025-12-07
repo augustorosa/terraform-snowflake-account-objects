@@ -28,6 +28,9 @@ monthly_credit_quota = 100
 enable_network_policies = false
 allowed_ip_ranges = ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]
 
+# Optional: Tag Database Configuration
+use_central_db_for_tags = true  # Use ULONO.TAGS instead of DEV_ULONO_TAGS_DB
+
 # Optional: Preview Features (required for stages, file formats, and network rules)
 preview_features_enabled = [
   "snowflake_stage_resource",
