@@ -209,6 +209,12 @@ module "snowflake_account_objects" {
   } : {}
 
   # -----------------------------------------------------------------------------
+  # Service Users & Authentication
+  # -----------------------------------------------------------------------------
+  service_users = var.service_users
+  pat_tokens    = var.pat_tokens
+
+  # -----------------------------------------------------------------------------
   # Data Loading Configuration
   # -----------------------------------------------------------------------------
   # Note: Database names use the pattern: {ENV}_{LAYER} (e.g., DEV_RAW, DEV_ANL, DEV_INT)

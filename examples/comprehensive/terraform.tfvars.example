@@ -60,5 +60,42 @@ allowed_ip_ranges = ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]
 preview_features_enabled = [
   "snowflake_stage_resource",
   "snowflake_file_format_resource",
-  "snowflake_network_rule_resource"
+  "snowflake_network_rule_resource",
+  "snowflake_table_resource"
 ]
+
+# =============================================================================
+# SERVICE USERS & AUTHENTICATION EXAMPLES
+# =============================================================================
+
+# Example: RSA Key-Pair Authentication (COMMENTED - requires external key generation)
+# Uncomment and provide your RSA public keys to use key-pair authentication
+# Generate keys with: openssl genrsa -out private_key.pem 2048 && openssl rsa -in private_key.pem -pubout -out public_key.pem
+# service_users = {
+#   "YOUR_PROJECT_DEV_API_SVC" = {
+#     comment           = "API service user with RSA key-pair auth"
+#     default_role      = "YOUR_PROJECT_DEV_INGEST_RL"
+#     default_warehouse = "COMPUTE_WH"
+#     email             = "api-service@example.com"
+#     rsa_public_key    = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA..."  # Your Base64 encoded public key
+#     rsa_public_key_2  = null  # Optional: For key rotation
+#     days_to_expiry    = 365   # Optional: Account expiry in days
+#   }
+# }
+
+# Example: Personal Access Tokens (PAT) - Recommended for service-to-service auth
+# These are easier to manage than RSA keys and support role restrictions
+# Uncomment to create PAT tokens after service users are created
+# pat_tokens = {
+#   "YOUR_PROJECT_DEV_INGEST_PAT" = {
+#     user_name      = "YOUR_PROJECT_DEV_INGEST_SVC"  # References the service user created in main.tf
+#     comment        = "PAT token for data ingestion service"
+#     days_to_expiry = 90                             # Token expires in 90 days
+#     disabled       = false
+#     role_restriction = [
+#       "YOUR_PROJECT_DEV_INGEST_RL"  # Token can only use this role
+#     ]
+#     mins_to_bypass_network_policy_requirement = 10  # Allow 10 mins to bypass network policy during rotation
+#     expire_rotated_token_after_hours          = 24  # Old tokens expire 24hrs after rotation
+#   }
+# }
