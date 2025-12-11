@@ -53,10 +53,10 @@ locals {
 resource "snowflake_database" "databases" {
   for_each = var.enable_databases ? var.databases : {}
 
-  # Naming per ARCHITECTURE.md Section 9.1 - Multi-Database Approach:
-  # Pattern: {ENV}_{LAYER} (e.g., DEV_RAW, QA_ANL, PROD_INT)
-  # Layers: RAW (raw data), ANL (analysis), INT (integration)
-  name    = each.value.suffix != "" ? "${local.env_prefix[lower(var.environment)]}_${upper(each.value.suffix)}" : "${local.env_prefix[lower(var.environment)]}_${upper(each.key)}"
+  # Naming pattern: PROJECT_ENV_LAYER_DB
+  # Examples: ULONO_DEV_RAW_DB, ULONO_PROD_ANL_DB, ULONO_QA_INT_DB
+  # Layers: RAW (raw data), INT (integration), ANL (analysis)
+  name    = each.value.suffix != "" ? "${local.base_prefix}_${upper(each.value.suffix)}_DB" : "${local.base_prefix}_${upper(each.key)}_DB"
   comment = coalesce(each.value.comment, "Database for ${var.project_name} ${var.environment} - Managed by Terraform")
 
   # Data retention configuration

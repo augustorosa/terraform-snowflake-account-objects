@@ -472,7 +472,7 @@ resource "snowflake_grant_ownership" "admin_role_to_sysadmin" {
 
   on {
     object_type = "ROLE"
-    object_name = "${local.base_prefix}_ADMIN_ROLE"
+    object_name = "${local.base_prefix}_ADMIN_RL"
   }
 
   depends_on = [
@@ -485,12 +485,12 @@ resource "snowflake_grant_ownership" "admin_role_to_sysadmin" {
 resource "snowflake_grant_ownership" "reader_role_to_admin" {
   count = local.should_create_functional_roles ? 1 : 0
 
-  account_role_name   = "${local.base_prefix}_ADMIN_ROLE"
+  account_role_name   = "${local.base_prefix}_ADMIN_RL"
   outbound_privileges = "COPY" # Preserve existing grants during ownership transfer
 
   on {
     object_type = "ROLE"
-    object_name = "${local.base_prefix}_READER_ROLE"
+    object_name = "${local.base_prefix}_READER_RL"
   }
 
   depends_on = [
@@ -503,12 +503,12 @@ resource "snowflake_grant_ownership" "reader_role_to_admin" {
 resource "snowflake_grant_ownership" "writer_role_to_admin" {
   count = local.should_create_functional_roles ? 1 : 0
 
-  account_role_name   = "${local.base_prefix}_ADMIN_ROLE"
+  account_role_name   = "${local.base_prefix}_ADMIN_RL"
   outbound_privileges = "COPY" # Preserve existing grants during ownership transfer
 
   on {
     object_type = "ROLE"
-    object_name = "${local.base_prefix}_WRITER_ROLE"
+    object_name = "${local.base_prefix}_WRITER_RL"
   }
 
   depends_on = [

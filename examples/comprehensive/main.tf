@@ -34,13 +34,15 @@ provider "snowflake" {
   preview_features_enabled = var.preview_features_enabled
 }
 
-# Local variables for database naming
+# Local variables for naming
 locals {
   env_prefix = {
     dev  = "DEV"
     qa   = "QA"
-    prod = "PROD"
+    prod = "PRD"
   }
+  # Pattern: PROJECT_ENV (e.g., ULONO_DEV)
+  base_prefix = upper("${var.project_name}_${local.env_prefix[lower(var.environment)]}")
 }
 
 # =============================================================================
@@ -98,8 +100,9 @@ module "snowflake_account_objects" {
   # Database Configuration - 3-Layer Architecture
   # -----------------------------------------------------------------------------
   # Multi-database approach: One database per layer
-  # Pattern: {ENV}_{LAYER} (e.g., DEV_RAW, DEV_ANL, DEV_INT)
-  # Schemas inside databases are for source systems or business domains
+  # Pattern: PROJECT_ENV_LAYER_DB (e.g., ULONO_DEV_RAW_DB, ULONO_DEV_ANL_DB)
+  # Schemas inside RAW are for source systems (SALESFORCE, MYSQL, etc.)
+  # Schemas inside ANL are for business domains (CUSTOMER, PRODUCT, etc.)
   databases = {
     raw = {
       comment                     = "Raw data layer - Source system schemas (SALESFORCE, MYSQL, etc.)"
@@ -108,22 +111,22 @@ module "snowflake_account_objects" {
       enable_3_layer_architecture = false
       create_layer_info_views     = false
     }
+    int = {
+      comment                       = "Integration layer - Transformed and enriched data"
+      suffix                        = "INT"
+      data_retention_days           = var.data_retention_days
+      enable_3_layer_architecture   = false
+      analysis_layer_managed_access = true
+      create_layer_info_views       = false
+    }
     anl = {
-      comment                      = "Analysis layer - Business domain schemas (CUSTOMER, PRODUCT, etc.)"
+      comment                      = "Analysis layer - Business-ready data for reporting"
       suffix                       = "ANL"
       data_retention_days          = var.data_retention_days
       enable_3_layer_architecture  = false
       prepare_layer_managed_access = true
       prepare_layer_transient      = false
       create_layer_info_views      = false
-    }
-    int = {
-      comment                       = "Integration layer - Analytical schemas (METRICS, REPORTS, etc.)"
-      suffix                        = "INT"
-      data_retention_days           = var.data_retention_days
-      enable_3_layer_architecture   = false
-      analysis_layer_managed_access = true
-      create_layer_info_views       = false
     }
   }
 

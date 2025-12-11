@@ -279,36 +279,51 @@ This module creates the following Snowflake resources:
 
 ## 🏗️ **Architecture**
 
+### Naming Convention
+
+All resources follow the pattern: `{PROJECT}_{ENV}_{TYPE}_{SUFFIX}`
+
+| Resource | Pattern | Examples |
+|----------|---------|----------|
+| **Databases** | `PROJECT_ENV_LAYER_DB` | `ULONO_DEV_RAW_DB`, `ULONO_PROD_ANL_DB` |
+| **Roles** | `PROJECT_ENV_TYPE_RL` | `ULONO_DEV_ADMIN_RL`, `ULONO_PROD_INGEST_RL` |
+| **Warehouses** | `PROJECT_ENV_NAME_WH` | `ULONO_DEV_ETL_WH`, `ULONO_PROD_ANALYTICS_WH` |
+| **Users** | `PROJECT_ENV_NAME_SVC` | `ULONO_DEV_INGEST_SVC` |
+| **Central DB** | `PROJECT` | `ULONO` (shared across environments) |
+
 ### RBAC Hierarchy
 
 ```
-SYSADMIN
+SYSADMIN (owns ADMIN role)
     ↑
-  ADMIN (inherits WRITER)
+  ULONO_DEV_ADMIN_RL (owns other roles)
     ↑
-  WRITER (inherits READER)  
+  ULONO_DEV_WRITER_RL (inherits READER)  
     ↑
-  READER
+  ULONO_DEV_READER_RL
 ```
 
-**Data Access Roles** (granted to ADMIN):
-- `ALL_DATA_ROLE`: Access to all layers
-- `ANALYSIS_ONLY_ROLE`: Business users (ANALYSIS layer only)
-- `INGEST_ONLY_ROLE`: ETL tools (RAW layer only)
+**Data Access Roles** (owned by ADMIN):
+- `ULONO_DEV_INGEST_RL`: ETL tools (RAW layer write access)
+- `ULONO_DEV_TRANSFORM_RL`: Data transformation (RAW read, INT/ANL write)
+- `ULONO_DEV_ANALYSIS_RL`: Analysts (ANL layer read only)
+- `ULONO_DEV_SCIENTIST_RL`: Data scientists (all layers read only)
 
 ### 3-Layer Data Architecture
 
 ```
-RAW → PREPARE → ANALYSIS
+RAW → INT → ANL
 ```
 
-- **RAW**: Landing zone for source data (unmanaged access)
-- **PREPARE**: Data transformation layer (managed access)
-- **ANALYSIS**: Business-ready analytics layer (managed access)
+| Layer | Database | Purpose | Schemas |
+|-------|----------|---------|---------|
+| **RAW** | `ULONO_DEV_RAW_DB` | Landing zone for source data | `SALESFORCE`, `MYSQL`, `API_INGEST` |
+| **INT** | `ULONO_DEV_INT_DB` | Transformed & enriched data | `STAGING`, `TRANSFORMS` |
+| **ANL** | `ULONO_DEV_ANL_DB` | Business-ready analytics | `CUSTOMERS`, `PRODUCTS`, `METRICS` |
 
 ### Central Settings Database
 
-The module creates a central database named `{PROJECT_NAME}` containing:
+The module creates a central database named `{PROJECT}` (e.g., `ULONO`) containing:
 
 | Schema | Purpose |
 |--------|---------|
@@ -499,8 +514,8 @@ conn = snowflake.connector.connect(
     account='MYORG-MYACCOUNT',
     private_key=p_key,
     warehouse='COMPUTE_WH',
-    database='DEV_RAW',
-    schema='PUBLIC'
+    database='ULONO_DEV_RAW_DB',
+    schema='SALESFORCE'
 )
 ```
 

@@ -13,7 +13,7 @@
 # =============================================================================
 
 locals {
-  # Environment prefix mapping (per ARCHITECTURE.md Section 9.1)
+  # Environment prefix mapping
   # Note: Using QA instead of STAGING to avoid confusion with data staging concepts
   env_prefix = {
     dev  = "DEV"
@@ -22,9 +22,11 @@ locals {
   }
 
   # Construct base naming components
-  base_prefix = upper("${local.env_prefix[lower(var.environment)]}_${var.project_name}")
+  # Pattern: PROJECT_ENV (e.g., ULONO_DEV, ULONO_PROD)
+  base_prefix = upper("${var.project_name}_${local.env_prefix[lower(var.environment)]}")
 
-  # Central settings database name (for network rules, governance, etc.)
+  # Central settings database name (shared across all environments)
+  # Pattern: PROJECT (e.g., ULONO)
   central_db_name = upper(var.project_name)
 
   # Tag database name (legacy - now uses central database)
