@@ -132,11 +132,11 @@ output "file_formats" {
 output "naming_convention" {
   description = "Naming convention used for resources"
   value = {
-    prefix_pattern = "ENV_PROJECT"
-    example        = "${upper(substr(var.environment, 0, 3))}_${upper(var.project_name)}"
-    databases      = "${upper(substr(var.environment, 0, 3))}_${upper(var.project_name)}_*_DB"
-    warehouses     = "${upper(substr(var.environment, 0, 3))}_${upper(var.project_name)}_*_WH"
-    roles          = "${upper(substr(var.environment, 0, 3))}_${upper(var.project_name)}_*_ROLE"
+    prefix_pattern = "PROJECT_ENV"
+    example        = "${upper(var.project_name)}_${upper(substr(var.environment, 0, 3))}"
+    databases      = "${upper(var.project_name)}_${upper(substr(var.environment, 0, 3))}_*_DB"
+    warehouses     = "${upper(var.project_name)}_${upper(substr(var.environment, 0, 3))}_*_WH"
+    roles          = "${upper(var.project_name)}_${upper(substr(var.environment, 0, 3))}_*_RL"
   }
 }
 

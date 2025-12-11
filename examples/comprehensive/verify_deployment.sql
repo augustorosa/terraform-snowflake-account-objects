@@ -55,12 +55,12 @@ SELECT
     role_name,
     comment,
     CASE 
-        WHEN role_name IN ('DEV_ULONO_READER_RL', 'DEV_ULONO_WRITER_RL', 'DEV_ULONO_ADMIN_RL') 
+        WHEN role_name IN ('ULONO_DEV_READER_RL', 'ULONO_DEV_WRITER_RL', 'ULONO_DEV_ADMIN_RL') 
              AND role_name LIKE '%_RL' THEN '✅ EXPECTED'
         ELSE '❌ UNEXPECTED'
     END AS status
 FROM snowflake.account_usage.roles
-WHERE role_name IN ('DEV_ULONO_READER_RL', 'DEV_ULONO_WRITER_RL', 'DEV_ULONO_ADMIN_RL')
+WHERE role_name IN ('ULONO_DEV_READER_RL', 'ULONO_DEV_WRITER_RL', 'ULONO_DEV_ADMIN_RL')
 ORDER BY role_name;
 
 -- Data Access Roles
@@ -69,14 +69,14 @@ SELECT
     role_name,
     comment,
     CASE 
-        WHEN role_name IN ('DEV_ULONO_INGEST_RL', 'DEV_ULONO_TRANSFORM_RL', 
-                          'DEV_ULONO_ANALYSIS_RL', 'DEV_ULONO_SCIENTIST_RL')
+        WHEN role_name IN ('ULONO_DEV_INGEST_RL', 'ULONO_DEV_TRANSFORM_RL', 
+                          'ULONO_DEV_ANALYSIS_RL', 'ULONO_DEV_SCIENTIST_RL')
              AND role_name LIKE '%_RL' THEN '✅ EXPECTED'
         ELSE '❌ UNEXPECTED'
     END AS status
 FROM snowflake.account_usage.roles
-WHERE role_name IN ('DEV_ULONO_INGEST_RL', 'DEV_ULONO_TRANSFORM_RL', 
-                    'DEV_ULONO_ANALYSIS_RL', 'DEV_ULONO_SCIENTIST_RL')
+WHERE role_name IN ('ULONO_DEV_INGEST_RL', 'ULONO_DEV_TRANSFORM_RL', 
+                    'ULONO_DEV_ANALYSIS_RL', 'ULONO_DEV_SCIENTIST_RL')
 ORDER BY role_name;
 
 -- Custom Roles
@@ -85,14 +85,14 @@ SELECT
     role_name,
     comment,
     CASE 
-        WHEN role_name IN ('DEV_ULONO_DATA_SCIENTIST_RL', 'DEV_ULONO_ML_ENGINEER_RL', 
-                          'DEV_ULONO_PLATFORM_ADMIN_RL')
+        WHEN role_name IN ('ULONO_DEV_DATA_SCIENTIST_RL', 'ULONO_DEV_ML_ENGINEER_RL', 
+                          'ULONO_DEV_PLATFORM_ADMIN_RL')
              AND role_name LIKE '%_RL' THEN '✅ EXPECTED'
         ELSE '❌ UNEXPECTED'
     END AS status
 FROM snowflake.account_usage.roles
-WHERE role_name IN ('DEV_ULONO_DATA_SCIENTIST_RL', 'DEV_ULONO_ML_ENGINEER_RL', 
-                    'DEV_ULONO_PLATFORM_ADMIN_RL')
+WHERE role_name IN ('ULONO_DEV_DATA_SCIENTIST_RL', 'ULONO_DEV_ML_ENGINEER_RL', 
+                    'ULONO_DEV_PLATFORM_ADMIN_RL')
 ORDER BY role_name;
 
 -- Project Admin Role (cross-environment)
@@ -118,16 +118,16 @@ SELECT
     granted_to_role AS parent_role,
     granted_role AS child_role,
     CASE 
-        WHEN (granted_to_role = 'DEV_ULONO_WRITER_RL' AND granted_role = 'DEV_ULONO_READER_RL')
-          OR (granted_to_role = 'DEV_ULONO_ADMIN_RL' AND granted_role = 'DEV_ULONO_WRITER_RL')
-          OR (granted_to_role = 'ULONO_ADMIN_RL' AND granted_role = 'DEV_ULONO_ADMIN_RL')
+        WHEN (granted_to_role = 'ULONO_DEV_WRITER_RL' AND granted_role = 'ULONO_DEV_READER_RL')
+          OR (granted_to_role = 'ULONO_DEV_ADMIN_RL' AND granted_role = 'ULONO_DEV_WRITER_RL')
+          OR (granted_to_role = 'ULONO_ADMIN_RL' AND granted_role = 'ULONO_DEV_ADMIN_RL')
           OR (granted_to_role = 'SYSADMIN' AND granted_role = 'ULONO_ADMIN_RL')
         THEN '✅ EXPECTED'
         ELSE '❌ UNEXPECTED'
     END AS status
 FROM snowflake.account_usage.role_grants
-WHERE (granted_to_role IN ('DEV_ULONO_READER_RL', 'DEV_ULONO_WRITER_RL', 'DEV_ULONO_ADMIN_RL', 'ULONO_ADMIN_RL', 'SYSADMIN')
-   AND granted_role IN ('DEV_ULONO_READER_RL', 'DEV_ULONO_WRITER_RL', 'DEV_ULONO_ADMIN_RL', 'ULONO_ADMIN_RL'))
+WHERE (granted_to_role IN ('ULONO_DEV_READER_RL', 'ULONO_DEV_WRITER_RL', 'ULONO_DEV_ADMIN_RL', 'ULONO_ADMIN_RL', 'SYSADMIN')
+   AND granted_role IN ('ULONO_DEV_READER_RL', 'ULONO_DEV_WRITER_RL', 'ULONO_DEV_ADMIN_RL', 'ULONO_ADMIN_RL'))
 ORDER BY granted_to_role, granted_role;
 
 -- Data Access Role Grants to Functional Roles
@@ -136,15 +136,15 @@ SELECT
     granted_to_role AS functional_role,
     granted_role AS data_access_role,
     CASE 
-        WHEN (granted_to_role = 'DEV_ULONO_READER_RL' AND granted_role = 'DEV_ULONO_ANALYSIS_RL')
-          OR (granted_to_role = 'DEV_ULONO_WRITER_RL' AND granted_role = 'DEV_ULONO_TRANSFORM_RL')
-          OR (granted_to_role = 'DEV_ULONO_ADMIN_RL' AND granted_role IN ('DEV_ULONO_INGEST_RL', 'DEV_ULONO_TRANSFORM_RL', 'DEV_ULONO_ANALYSIS_RL', 'DEV_ULONO_SCIENTIST_RL'))
+        WHEN (granted_to_role = 'ULONO_DEV_READER_RL' AND granted_role = 'ULONO_DEV_ANALYSIS_RL')
+          OR (granted_to_role = 'ULONO_DEV_WRITER_RL' AND granted_role = 'ULONO_DEV_TRANSFORM_RL')
+          OR (granted_to_role = 'ULONO_DEV_ADMIN_RL' AND granted_role IN ('ULONO_DEV_INGEST_RL', 'ULONO_DEV_TRANSFORM_RL', 'ULONO_DEV_ANALYSIS_RL', 'ULONO_DEV_SCIENTIST_RL'))
         THEN '✅ EXPECTED'
         ELSE '❌ UNEXPECTED'
     END AS status
 FROM snowflake.account_usage.role_grants
-WHERE granted_to_role IN ('DEV_ULONO_READER_RL', 'DEV_ULONO_WRITER_RL', 'DEV_ULONO_ADMIN_RL')
-  AND granted_role IN ('DEV_ULONO_INGEST_RL', 'DEV_ULONO_TRANSFORM_RL', 'DEV_ULONO_ANALYSIS_RL', 'DEV_ULONO_SCIENTIST_RL')
+WHERE granted_to_role IN ('ULONO_DEV_READER_RL', 'ULONO_DEV_WRITER_RL', 'ULONO_DEV_ADMIN_RL')
+  AND granted_role IN ('ULONO_DEV_INGEST_RL', 'ULONO_DEV_TRANSFORM_RL', 'ULONO_DEV_ANALYSIS_RL', 'ULONO_DEV_SCIENTIST_RL')
 ORDER BY granted_to_role, granted_role;
 
 -- Custom Role Inheritance
@@ -153,15 +153,15 @@ SELECT
     granted_to_role AS parent_role,
     granted_role AS custom_role,
     CASE 
-        WHEN (granted_to_role = 'DEV_ULONO_READER_RL' AND granted_role = 'DEV_ULONO_DATA_SCIENTIST_RL')
-          OR (granted_to_role = 'DEV_ULONO_WRITER_RL' AND granted_role = 'DEV_ULONO_ML_ENGINEER_RL')
-          OR (granted_to_role = 'DEV_ULONO_ADMIN_RL' AND granted_role = 'DEV_ULONO_PLATFORM_ADMIN_RL')
+        WHEN (granted_to_role = 'ULONO_DEV_READER_RL' AND granted_role = 'ULONO_DEV_DATA_SCIENTIST_RL')
+          OR (granted_to_role = 'ULONO_DEV_WRITER_RL' AND granted_role = 'ULONO_DEV_ML_ENGINEER_RL')
+          OR (granted_to_role = 'ULONO_DEV_ADMIN_RL' AND granted_role = 'ULONO_DEV_PLATFORM_ADMIN_RL')
         THEN '✅ EXPECTED'
         ELSE '❌ UNEXPECTED'
     END AS status
 FROM snowflake.account_usage.role_grants
-WHERE granted_to_role IN ('DEV_ULONO_READER_RL', 'DEV_ULONO_WRITER_RL', 'DEV_ULONO_ADMIN_RL')
-  AND granted_role IN ('DEV_ULONO_DATA_SCIENTIST_RL', 'DEV_ULONO_ML_ENGINEER_RL', 'DEV_ULONO_PLATFORM_ADMIN_RL')
+WHERE granted_to_role IN ('ULONO_DEV_READER_RL', 'ULONO_DEV_WRITER_RL', 'ULONO_DEV_ADMIN_RL')
+  AND granted_role IN ('ULONO_DEV_DATA_SCIENTIST_RL', 'ULONO_DEV_ML_ENGINEER_RL', 'ULONO_DEV_PLATFORM_ADMIN_RL')
 ORDER BY granted_to_role, granted_role;
 
 -- =============================================================================
@@ -177,13 +177,13 @@ SELECT
     name AS object_name,
     privilege,
     CASE 
-        WHEN role_name = 'DEV_ULONO_INGEST_RL' 
+        WHEN role_name = 'ULONO_DEV_INGEST_RL' 
          AND name = 'DEV_RAW' 
          AND privilege = 'USAGE' THEN '✅ EXPECTED'
         ELSE '❌ UNEXPECTED'
     END AS status
 FROM snowflake.account_usage.grants_to_roles
-WHERE role_name = 'DEV_ULONO_INGEST_RL'
+WHERE role_name = 'ULONO_DEV_INGEST_RL'
   AND granted_on = 'DATABASE'
   AND name IN ('DEV_RAW', 'DEV_INT', 'DEV_ANL')
 ORDER BY role_name, name;
@@ -196,13 +196,13 @@ SELECT
     name AS object_name,
     privilege,
     CASE 
-        WHEN role_name = 'DEV_ULONO_TRANSFORM_RL' 
+        WHEN role_name = 'ULONO_DEV_TRANSFORM_RL' 
          AND name IN ('DEV_RAW', 'DEV_INT', 'DEV_ANL')
          AND privilege = 'USAGE' THEN '✅ EXPECTED'
         ELSE '❌ UNEXPECTED'
     END AS status
 FROM snowflake.account_usage.grants_to_roles
-WHERE role_name = 'DEV_ULONO_TRANSFORM_RL'
+WHERE role_name = 'ULONO_DEV_TRANSFORM_RL'
   AND granted_on = 'DATABASE'
   AND name IN ('DEV_RAW', 'DEV_INT', 'DEV_ANL')
 ORDER BY role_name, name;
@@ -215,13 +215,13 @@ SELECT
     name AS object_name,
     privilege,
     CASE 
-        WHEN role_name = 'DEV_ULONO_ANALYSIS_RL' 
+        WHEN role_name = 'ULONO_DEV_ANALYSIS_RL' 
          AND name = 'DEV_ANL' 
          AND privilege = 'USAGE' THEN '✅ EXPECTED'
         ELSE '❌ UNEXPECTED'
     END AS status
 FROM snowflake.account_usage.grants_to_roles
-WHERE role_name = 'DEV_ULONO_ANALYSIS_RL'
+WHERE role_name = 'ULONO_DEV_ANALYSIS_RL'
   AND granted_on = 'DATABASE'
   AND name IN ('DEV_RAW', 'DEV_INT', 'DEV_ANL')
 ORDER BY role_name, name;
@@ -234,13 +234,13 @@ SELECT
     name AS object_name,
     privilege,
     CASE 
-        WHEN role_name = 'DEV_ULONO_SCIENTIST_RL' 
+        WHEN role_name = 'ULONO_DEV_SCIENTIST_RL' 
          AND name IN ('DEV_RAW', 'DEV_INT', 'DEV_ANL')
          AND privilege = 'USAGE' THEN '✅ EXPECTED'
         ELSE '❌ UNEXPECTED'
     END AS status
 FROM snowflake.account_usage.grants_to_roles
-WHERE role_name = 'DEV_ULONO_SCIENTIST_RL'
+WHERE role_name = 'ULONO_DEV_SCIENTIST_RL'
   AND granted_on = 'DATABASE'
   AND name IN ('DEV_RAW', 'DEV_INT', 'DEV_ANL')
 ORDER BY role_name, name;
@@ -257,11 +257,11 @@ SELECT
     auto_suspend,
     auto_resume,
     CASE 
-        WHEN warehouse_name LIKE 'DEV_ULONO%_WH' THEN '✅ EXPECTED'
+        WHEN warehouse_name LIKE 'ULONO_DEV%_WH' THEN '✅ EXPECTED'
         ELSE '❌ UNEXPECTED'
     END AS status
 FROM snowflake.account_usage.warehouses
-WHERE warehouse_name LIKE 'DEV_ULONO%'
+WHERE warehouse_name LIKE 'ULONO_DEV%'
 ORDER BY warehouse_name;
 
 -- =============================================================================
@@ -321,7 +321,7 @@ SELECT
 FROM snowflake.account_usage.tag_references
 WHERE OBJECT_DATABASE IS NULL
   AND OBJECT_SCHEMA IS NULL
-  AND OBJECT_NAME LIKE 'DEV_ULONO%_RL'
+  AND OBJECT_NAME LIKE 'ULONO_DEV%_RL'
 ORDER BY OBJECT_NAME, TAG_NAME;
 
 -- =============================================================================
@@ -332,16 +332,16 @@ SELECT 'SUMMARY REPORT' AS verification_section;
 SELECT 
     'SUMMARY' AS report_type,
     COUNT(DISTINCT CASE WHEN database_name IN ('DEV_RAW', 'DEV_INT', 'DEV_ANL') THEN database_name END) AS databases_created,
-    COUNT(DISTINCT CASE WHEN role_name LIKE 'DEV_ULONO%_RL' OR role_name = 'ULONO_ADMIN_RL' THEN role_name END) AS roles_created,
-    COUNT(DISTINCT CASE WHEN warehouse_name LIKE 'DEV_ULONO%_WH' THEN warehouse_name END) AS warehouses_created,
+    COUNT(DISTINCT CASE WHEN role_name LIKE 'ULONO_DEV%_RL' OR role_name = 'ULONO_ADMIN_RL' THEN role_name END) AS roles_created,
+    COUNT(DISTINCT CASE WHEN warehouse_name LIKE 'ULONO_DEV%_WH' THEN warehouse_name END) AS warehouses_created,
     COUNT(DISTINCT CASE WHEN stage_catalog = 'DEV_RAW' THEN stage_name END) AS stages_created,
     COUNT(DISTINCT CASE WHEN file_format_catalog = 'DEV_RAW' THEN file_format_name END) AS file_formats_created
 FROM (
     SELECT catalog_name AS database_name FROM information_schema.databases WHERE catalog_name IN ('DEV_RAW', 'DEV_INT', 'DEV_ANL')
     UNION ALL
-    SELECT role_name FROM snowflake.account_usage.roles WHERE role_name LIKE 'DEV_ULONO%_RL' OR role_name = 'ULONO_ADMIN_RL'
+    SELECT role_name FROM snowflake.account_usage.roles WHERE role_name LIKE 'ULONO_DEV%_RL' OR role_name = 'ULONO_ADMIN_RL'
     UNION ALL
-    SELECT warehouse_name FROM snowflake.account_usage.warehouses WHERE warehouse_name LIKE 'DEV_ULONO%'
+    SELECT warehouse_name FROM snowflake.account_usage.warehouses WHERE warehouse_name LIKE 'ULONO_DEV%'
     UNION ALL
     SELECT stage_name FROM snowflake.information_schema.stages WHERE stage_catalog = 'DEV_RAW'
     UNION ALL

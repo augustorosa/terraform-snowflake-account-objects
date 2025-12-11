@@ -46,7 +46,7 @@ enable_external_oauth          = false  # Requires external OAuth provider setup
 
 # Database Organization
 enable_central_settings_db     = true
-use_central_db_for_tags        = true  # Tags in ULONO.TAGS instead of DEV_ULONO_TAGS_DB
+use_central_db_for_tags        = true  # Tags in ULONO.TAGS instead of ULONO_DEV_TAGS_DB
 
 # Role Creation
 create_functional_roles        = true  # READER, WRITER, ADMIN
