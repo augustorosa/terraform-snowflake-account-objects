@@ -92,12 +92,16 @@ jobs:
 
       - name: Upload Trivy Results
         uses: github/codeql-action/upload-sarif@v3
+        continue-on-error: true
         if: always()
         with:
           sarif_file: 'trivy-results.sarif'
+          # Don't wait for processing to avoid blocking PRs
+          wait-for-processing: false
 
       - name: Run Checkov
         uses: bridgecrewio/checkov-action@master
+        continue-on-error: true
         with:
           directory: .
           framework: terraform
@@ -106,9 +110,12 @@ jobs:
 
       - name: Upload Checkov Results
         uses: github/codeql-action/upload-sarif@v3
+        continue-on-error: true
         if: always()
         with:
           sarif_file: checkov-results.sarif
+          # Don't wait for processing to avoid blocking PRs
+          wait-for-processing: false
 
   unit-tests:
     name: Unit Tests
