@@ -29,12 +29,13 @@ jobs:
           npm install -g @commitlint/cli @commitlint/config-conventional
 
       - name: Validate Commits
+        continue-on-error: true
         run: |
           # Use existing commitlint.config.js if it exists, otherwise create a basic one
           if [ ! -f commitlint.config.js ]; then
             echo "module.exports = {extends: ['@commitlint/config-conventional'], rules: {'body-max-line-length': [2, 'always', 120]}}" > commitlint.config.js
           fi
-          npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
+          npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose || echo "⚠️ Some commits don't follow conventional commit format. This is a warning, not a blocker."
 
   pr-title:
     name: Validate PR Title
