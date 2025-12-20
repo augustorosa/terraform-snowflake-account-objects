@@ -47,6 +47,8 @@ module.exports = {
         'examples',
         'tests',
         'ci',
+        'commitlint',
+        'pr-validation',
         'deps'
       ]
     ]
