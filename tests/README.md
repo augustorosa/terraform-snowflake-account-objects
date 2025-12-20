@@ -14,7 +14,7 @@ This directory contains all tests for the Terraform Snowflake Account Objects mo
 ## Prerequisites
 
 1. **Go 1.21+**: Install from [golang.org](https://golang.org/dl/)
-2. **Terraform 1.5.7+**: Install from [terraform.io](https://www.terraform.io/downloads)
+2. **Terraform 1.10.0+**: Install from [terraform.io](https://www.terraform.io/downloads)
 3. **Snowflake Account**: Required for integration tests
 
 ### Environment Variables

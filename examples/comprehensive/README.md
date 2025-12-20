@@ -1,248 +1,172 @@
-# Comprehensive Example: Multi-Environment Snowflake Account Objects
+# Comprehensive Example
 
-This example demonstrates a complete, production-ready implementation of the Snowflake Account Objects module with realistic usage patterns and testing capabilities.
+This example demonstrates **all features** of the Snowflake Account Objects module working together.
 
-## 🎯 What This Example Creates
+## Features Demonstrated
 
-### 1. **Module Foundation**
-- ✅ RBAC roles with proper inheritance (READER → WRITER → ADMIN → SYSADMIN)
-- ✅ Tag schema for governance, operational, and technical tags
-- ✅ Naming conventions and procedures
-- ✅ Cortex AI features (disabled by default)
+| Feature | Enabled | Description |
+|---------|---------|-------------|
+| ✅ RBAC | Yes | Functional roles (READER, WRITER, ADMIN) + custom roles |
+| ✅ Tagging | Yes | Auto-tagging system with governance, operational, technical tags |
+| ✅ Databases | Yes | 3-layer architecture (RAW, PREPARE, ANALYSIS) |
+| ✅ Warehouses | Yes | ETL, Analytics, and Ad-hoc warehouses |
+| ✅ Data Loading | Yes | Stages and file formats for CSV/JSON |
+| ✅ Resource Monitors | Yes | Monthly credit quota monitoring |
+| ✅ Central Settings DB | Yes | Central database for governance |
+| ⚙️ Network Policies | Optional | IP-based access control |
 
-### 2. **Data Architecture**
-- ✅ Analytics database with 3-layer architecture:
-  - **RAW**: Unprocessed source data
-  - **PREPARE**: Cleaned and transformed data  
-  - **ANALYZE**: Business-ready data for reporting
-- ✅ Sample tables in RAW and ANALYZE layers
+## Quick Start
 
-### 3. **Compute Resources**
-- ✅ ETL warehouse (X-SMALL, auto-suspend 60s)
-- ✅ Analytics warehouse (SMALL, auto-suspend 300s)
+### 1. Copy Configuration
 
-### 4. **Users and Access Control**
-- ✅ Analyst user with READER role
-- ✅ Engineer user with WRITER role
-- ✅ Admin user with ADMIN role
-- ✅ Proper role assignments and permissions
-
-### 5. **Testing Infrastructure**
-- ✅ Sample tables for testing permissions
-- ✅ SQL commands for manual role grants
-- ✅ Database, schema, and warehouse creation
-
-## 🚀 Quick Start
-
-### Prerequisites
-- Terraform >= 1.0
-- Snowflake account with SYSADMIN access
-- Snowflake provider configured
-
-### 1. **Configure Variables**
 ```bash
-# Copy the example file
 cp terraform.tfvars.example terraform.tfvars
-
-# Edit with your values
-nano terraform.tfvars
 ```
 
-### 2. **Initialize and Apply**
+### 2. Edit Configuration
+
+Edit `terraform.tfvars` with your Snowflake credentials:
+
+```hcl
+# Required
+organization_name  = "YOUR_ORG"
+snowflake_account  = "YOUR_ACCOUNT"
+snowflake_username = "YOUR_USERNAME"
+snowflake_password = "YOUR_PASSWORD"
+
+# Project
+project_name = "analytics"
+environment  = "dev"
+```
+
+### 3. Initialize and Apply
+
 ```bash
-# Initialize Terraform
 terraform init
-
-# Plan the deployment
 terraform plan
-
-# Apply the configuration
 terraform apply
 ```
 
-### 3. **Test the Implementation**
+## Created Resources
+
+### Databases (2)
+
+| Database | Purpose |
+|----------|---------|
+| `DEV_ANALYTICS_ANALYTICS_DB` | Main analytics with 3-layer schemas |
+| `DEV_ANALYTICS_STAGING_DB` | Staging for data validation |
+
+### Schemas (per database)
+
+| Schema | Purpose | Managed Access |
+|--------|---------|----------------|
+| `RAW` | Landing zone for source data | No |
+| `PREPARE` | Cleaned and transformed data | Yes |
+| `ANALYSIS` | Business-ready analytics | Yes |
+
+### Warehouses (3)
+
+| Warehouse | Size | Purpose |
+|-----------|------|---------|
+| `DEV_ANALYTICS_ETL_WH` | X-Small | ETL processing |
+| `DEV_ANALYTICS_ANALYTICS_WH` | Small | BI and reporting |
+| `DEV_ANALYTICS_ADHOC_WH` | X-Small | Ad-hoc queries |
+
+### Roles
+
+#### Functional Roles
+- `DEV_ANALYTICS_READER_RL` - Read-only access (gets ANALYSIS_RL)
+- `DEV_ANALYTICS_WRITER_RL` - Read/write access (inherits READER, gets TRANSFORM_RL)
+- `DEV_ANALYTICS_ADMIN_RL` - Full administrative access (inherits WRITER→READER, gets all data access roles)
+
+#### Custom Roles
+- `DEV_ANALYTICS_DATA_SCIENTIST_RL` - Inherits from READER
+- `DEV_ANALYTICS_ML_ENGINEER_RL` - Inherits from WRITER
+- `DEV_ANALYTICS_PLATFORM_ADMIN_RL` - Inherits from ADMIN
+
+#### Data Access Roles
+- `DEV_ANALYTICS_INGEST_RL` - INSERT/COPY to RAW databases only
+- `DEV_ANALYTICS_TRANSFORM_RL` - READ RAW, WRITE INT+ANL databases
+- `DEV_ANALYTICS_ANALYSIS_RL` - READ ANL databases only
+- `DEV_ANALYTICS_SCIENTIST_RL` - READ RAW+INT+ANL databases (all read-only)
+
+#### Cross-Environment Role
+- `ANALYTICS_ADMIN_RL` - Cross-environment project administrator (inherits from all env ADMIN roles, inherits to SYSADMIN)
+
+### Central Settings Database
+
+| Schema | Purpose |
+|--------|---------|
+| `NETWORK` | Network rules and policies |
+| `GOVERNANCE` | Governance configurations |
+| `SECURITY` | Security policies |
+| `AUDIT` | Audit logs |
+| `TAGS` | Tag definitions (optional) |
+
+### Tags Applied
+
+Tags are automatically applied to all resources:
+
+| Tag | Applied To | Example Value |
+|-----|------------|---------------|
+| `environment` | All resources | `dev` |
+| `project` | All resources | `analytics` |
+| `data_classification` | Schemas | `INTERNAL`, `CONFIDENTIAL` |
+| `cost_center` | Warehouses | `engineering` |
+| `owner` | Databases | `data-team@company.com` |
+
+## Configuration Options
+
+### Enable Network Policies
+
+```hcl
+enable_network_policies = true
+
+allowed_ip_ranges = [
+  "10.0.0.0/8",
+  "YOUR.OFFICE.IP.0/24",
+]
+```
+
+### Adjust Resource Limits
+
+```hcl
+data_retention_days  = 30   # Increase retention
+monthly_credit_quota = 500  # Increase credit limit
+```
+
+## Outputs
+
+After applying, you'll see:
+
 ```bash
-# Get testing commands
-terraform output testing_commands
-
-# Get role assignment commands
-terraform output role_usage_examples
+terraform output deployment_info
+terraform output databases
+terraform output warehouses
+terraform output functional_roles
+terraform output tag_associations_summary
 ```
 
-## 📊 What Gets Created
+## Clean Up
 
-### **Roles Created**
-```
-analytics_dev_READER_ROLE     # Read-only access
-analytics_dev_WRITER_ROLE     # Read/write access (inherits READER)
-analytics_dev_ADMIN_ROLE      # Full access (inherits WRITER)
-analytics_dev_ALL_DATA_ROLE   # Access to all data layers
-analytics_dev_ANALYZE_ONLY_ROLE # Access to ANALYZE layer only
-analytics_dev_INGEST_ONLY_ROLE  # Access to RAW layer only
-```
-
-### **Database and Schemas**
-```
-analytics_dev_analytics (Database)
-├── RAW (Schema) - Raw data layer
-├── PREPARE (Schema) - Prepared data layer
-└── ANALYZE (Schema) - Analytics data layer
-```
-
-### **Warehouses**
-```
-analytics_dev_ETL_WH        # ETL processing
-analytics_dev_ANALYTICS_WH  # Analytics and reporting
-```
-
-### **Users**
-```
-ANALYST_DEV   # Business analyst (READER role)
-ENGINEER_DEV  # Data engineer (WRITER role)
-ADMIN_DEV     # Platform admin (ADMIN role)
-```
-
-## 🧪 Testing the Implementation
-
-### **1. Grant Roles to Users**
-```sql
--- Grant roles to users (run these commands manually)
-GRANT ROLE analytics_dev_READER_ROLE TO USER ANALYST_DEV;
-GRANT ROLE analytics_dev_WRITER_ROLE TO USER ENGINEER_DEV;
-GRANT ROLE analytics_dev_ADMIN_ROLE TO USER ADMIN_DEV;
-```
-
-### **2. Test Analyst Access (Read-Only)**
-```sql
--- Connect as ANALYST_DEV
-USE ROLE analytics_dev_READER_ROLE;
-USE DATABASE analytics_dev_analytics;
-USE SCHEMA ANALYZE;
-SELECT * FROM SAMPLE_ANALYTICS_DATA LIMIT 10;
-```
-
-### **3. Test Engineer Access (Read/Write)**
-```sql
--- Connect as ENGINEER_DEV
-USE ROLE analytics_dev_WRITER_ROLE;
-USE DATABASE analytics_dev_analytics;
-USE SCHEMA RAW;
-SELECT * FROM SAMPLE_RAW_DATA LIMIT 10;
--- Should also have access to ANALYZE layer (inherits READER)
-USE SCHEMA ANALYZE;
-SELECT * FROM SAMPLE_ANALYTICS_DATA LIMIT 10;
-```
-
-### **4. Test Admin Access (Full Access)**
-```sql
--- Connect as ADMIN_DEV
-USE ROLE analytics_dev_ADMIN_ROLE;
-USE DATABASE analytics_dev_analytics;
-SHOW SCHEMAS;
--- Should have access to everything
-```
-
-### **5. Verify Role Hierarchy**
-```sql
--- Check what roles inherit from ADMIN
-SHOW GRANTS TO ROLE analytics_dev_ADMIN_ROLE;
-
--- Check what roles inherit from WRITER
-SHOW GRANTS TO ROLE analytics_dev_WRITER_ROLE;
-```
-
-## 🔧 Customization Options
-
-### **Enable Cortex AI Features**
-```hcl
-cortex_ai_features = {
-  enabled = true
-  column_descriptions = {
-    enabled       = true
-    auto_generate = true
-    languages     = ["en", "es"]
-  }
-  table_documentation = {
-    enabled              = true
-    auto_summarize       = true
-    include_usage_patterns = true
-  }
-  data_classification = {
-    enabled          = true
-    auto_detect_pii  = true
-    confidence_threshold = 0.8
-  }
-}
-```
-
-### **Add Custom Tags**
-```hcl
-custom_tags = {
-  cost_center = "data-platform"
-  data_owner  = "data-team"
-  compliance  = "internal"
-  project_id  = "PRJ-001"
-}
-```
-
-### **Different Environment**
-```hcl
-environment = "staging"  # or "prod"
-project_name = "customer-analytics"
-```
-
-## 🛡️ Security Features
-
-### **Role Inheritance**
-- **READER** → **WRITER** → **ADMIN** → **SYSADMIN**
-- Each role inherits permissions from the previous level
-- Clear permission escalation
-
-### **Data Layer Access**
-- **READER**: Access to ANALYZE layer only
-- **WRITER**: Access to all layers (inherits READER)
-- **ADMIN**: Full access to everything
-
-### **Tag-Based Governance**
-- Environment tags for resource tracking
-- Project tags for cost allocation
-- Team tags for ownership
-- Data layer tags for classification
-
-## 🧹 Cleanup
-
-To destroy all resources:
 ```bash
 terraform destroy
 ```
 
-**⚠️ Warning**: This will delete all created databases, schemas, tables, warehouses, users, and roles.
+## Security Notes
 
-## 📈 Production Considerations
+⚠️ **Never commit `terraform.tfvars` with real credentials!**
 
-### **1. Password Management**
-- Use secure password management (HashiCorp Vault, AWS Secrets Manager)
-- Rotate passwords regularly
-- Use key-pair authentication for service accounts
+Add to `.gitignore`:
+```
+terraform.tfvars
+*.tfstate
+*.tfstate.*
+```
 
-### **2. Environment Separation**
-- Use separate Snowflake accounts for dev/staging/prod
-- Or use different databases within the same account
-- Implement proper data isolation
+## Next Steps
 
-### **3. Monitoring and Alerting**
-- Set up warehouse usage monitoring
-- Monitor role assignments and permissions
-- Track tag compliance
-
-### **4. Backup and Recovery**
-- Implement database backup strategies
-- Document recovery procedures
-- Test disaster recovery scenarios
-
-## 🔗 Related Documentation
-
-- [Module Documentation](../../README.md)
-- [RBAC Architecture](../../requirements/RBAC_ARCHITECTURE.md)
-- [Technical Requirements](../../requirements/TECHNICAL_REQUIREMENTS.md)
-- [Integration Requirements](../../requirements/INTEGRATION_REQUIREMENTS.md) 
+1. Review the created resources in Snowflake
+2. Assign roles to users
+3. Configure additional network policies if needed
+4. Set up CI/CD for infrastructure changes

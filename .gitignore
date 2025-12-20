@@ -1,0 +1,147 @@
+# Terraform
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.terraform/
+.terraform.lock.hcl
+terraform.tfvars
+*.auto.tfvars
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+vendor/
+go.work
+
+# Test Coverage
+tests/coverage.out
+tests/coverage.html
+tests/*.xml
+*.cover
+*.coverage
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.npm
+.yarn-integrity
+*.tgz
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+.envrc
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.settings/
+*.sublime-workspace
+*.sublime-project
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+.temp/
+*.tmp
+*.temp
+*.bak
+*.backup
+*.orig
+
+# Build artifacts
+dist/
+build/
+out/
+target/
+
+# Documentation
+site/
+docs/_build/
+.mkdocs/
+
+# Credentials
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+*.p8
+*.pub
+secrets/
+credentials/
+
+# Local configuration
+local.yml
+local.yaml
+config.local.yml
+config.local.yaml
+
+# Terraform module cache
+.modules/
+
+# Python (for pre-commit and tools)
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+.pytest_cache/
+.mypy_cache/
+.tox/
+.coverage
+.coverage.*
+
+# Snowflake specific
+snowflake_config.json
+.snowsql/
+
+# Backup files
+*.backup
+*.old
+
+# Lock files (except package-lock.json for reproducible builds)
+yarn.lock
+pnpm-lock.yaml
+
+# Test fixtures that might contain sensitive data
+tests/fixtures/live/
+tests/fixtures/credentials/
+
+# Generated files
+CHANGELOG.md.bak
+VERSION.bak 
+examples/*/tfplan
+SECURITY_UPDATE_REVIEW.md

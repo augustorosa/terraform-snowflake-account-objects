@@ -1,0 +1,162 @@
+name: PR Validation
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  commitlint:
+    name: Validate Commit Messages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install commitlint
+        run: |
+          npm install -g @commitlint/cli @commitlint/config-conventional
+
+      - name: Validate Commits
+        continue-on-error: true
+        run: |
+          # Use existing commitlint.config.js if it exists, otherwise create a basic one
+          if [ ! -f commitlint.config.js ]; then
+            echo "module.exports = {extends: ['@commitlint/config-conventional'], rules: {'body-max-line-length': [2, 'always', 120]}}" > commitlint.config.js
+          fi
+          npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose || echo "⚠️ Some commits don't follow conventional commit format. This is a warning, not a blocker."
+
+  pr-title:
+    name: Validate PR Title
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate PR Title Format
+        uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            docs
+            style
+            refactor
+            perf
+            test
+            build
+            ci
+            chore
+            revert
+          requireScope: false
+          # Allow version numbers (v0.6.0) and other patterns at start of subject
+          # Pattern: uppercase letter, digit, or 'v' (for version numbers)
+          subjectPattern: ^(v|[A-Z]|[0-9]).+$
+          subjectPatternError: |
+            The subject "{subject}" found in the pull request title "{title}"
+            doesn't match the configured pattern. Please ensure that the subject
+            starts with an uppercase letter, number, or version number (e.g., v0.6.0).
+
+  pr-size:
+    name: Check PR Size
+    runs-on: ubuntu-latest
+    steps:
+      - name: PR Size Labeler
+        uses: codelytv/pr-size-labeler@v1
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          xs_label: "size/XS"
+          xs_max_size: "10"
+          s_label: "size/S"
+          s_max_size: "100"
+          m_label: "size/M"
+          m_max_size: "500"
+          l_label: "size/L"
+          l_max_size: "1000"
+          xl_label: "size/XL"
+          fail_if_xl: false
+
+  conventional-pr:
+    name: Conventional PR Check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    steps:
+      - name: PR Description Check
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = context.payload.pull_request;
+            const body = pr.body || '';
+            
+            // Check for recommended sections (warn but don't fail)
+            const recommendedSections = [
+              '## Description',
+              '## Type of Change',
+              '## Testing',
+              '## Checklist'
+            ];
+            
+            const missingSections = recommendedSections.filter(section => 
+              !body.includes(section)
+            );
+            
+            if (missingSections.length > 0) {
+              // Only warn, don't fail - allows flexibility for different PR types
+              const message = `⚠️ **PR Description Recommendation**\n\nYour PR description could be improved by adding the following sections:\n${missingSections.map(s => `- ${s}`).join('\n')}\n\n**Template:**\n\`\`\`\n## Description\nBrief description of changes\n\n## Type of Change\n- [ ] Bug fix\n- [ ] New feature\n- [ ] Breaking change\n- [ ] Documentation update\n\n## Testing\nHow was this tested?\n\n## Checklist\n- [ ] Code follows style guidelines\n- [ ] Self-review completed\n- [ ] Comments added for complex code\n- [ ] Documentation updated\n\`\`\``;
+              
+              // Try to add comment to PR (non-blocking)
+              try {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.number,
+                  body: message
+                });
+              } catch (error) {
+                core.warning(`Could not add comment to PR: ${error.message}`);
+              }
+              
+              // Log warning but don't fail the workflow
+              core.warning(`PR description is missing recommended sections: ${missingSections.join(', ')}`);
+            } else {
+              core.info('✅ PR description includes all recommended sections');
+            }
+            
+            // Check for breaking changes
+            if (body.toLowerCase().includes('breaking change') || body.toLowerCase().includes('breaking')) {
+              try {
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.number,
+                  labels: ['breaking-change']
+                });
+              } catch (error) {
+                core.warning(`Could not add label: ${error.message}`);
+              }
+            }
+
+  auto-assign:
+    name: Auto Assign Reviewers
+    runs-on: ubuntu-latest
+    if: false  # Disabled - action version not found, configure manually if needed
+    steps:
+      - name: Auto Assign
+        uses: kentaro-m/auto-assign-action@v1.2.0
+        continue-on-error: true
+        with:
+          configuration-path: '.github/auto_assign.yml' 

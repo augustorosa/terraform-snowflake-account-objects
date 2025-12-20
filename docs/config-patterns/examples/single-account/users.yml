@@ -1,0 +1,273 @@
+# Users Configuration - Human Users and Service Accounts
+# This file defines all users and their role assignments
+
+version: "1.0"
+description: "User management for 3-layer architecture"
+
+# Global user settings
+defaults:
+  must_change_password: true  # For human users
+  days_to_expiry: 90          # Password expiration
+  mins_to_unlock: 30          # Account unlock time
+  comment: "Managed by Terraform"
+  
+# User definitions
+users:
+  # Human users - organized by function
+  humans:
+    # Data Engineers - Full pipeline access
+    data_engineers:
+      john_smith:
+        email: "john.smith@company.com"
+        first_name: "John"
+        last_name: "Smith"
+        display_name: "John Smith"
+        type: "PERSON"  # Human user - MFA will be enforced
+        default_role: "{env}_{project}_data_engineer"
+        default_warehouse: "{env}_{project}_dev_wh"
+        roles:
+          - "{env}_{project}_data_engineer"
+          - "{env}_{project}_developer"
+        must_change_password: true
+        
+      jane_doe:
+        email: "jane.doe@company.com"
+        first_name: "Jane"
+        last_name: "Doe"
+        display_name: "Jane Doe"
+        type: "PERSON"  # Human user - MFA will be enforced
+        default_role: "{env}_{project}_data_engineer"
+        default_warehouse: "{env}_{project}_dev_wh"
+        roles:
+          - "{env}_{project}_data_engineer"
+          - "{env}_{project}_admin"  # Also an admin
+        must_change_password: true
+    
+    # Data Analysts - Analytics access
+    data_analysts:
+      bob_analyst:
+        email: "bob.analyst@company.com"
+        first_name: "Bob"
+        last_name: "Analyst"
+        display_name: "Bob Analyst"
+        type: "PERSON"  # Human user - MFA will be enforced
+        default_role: "{env}_{project}_analyst"
+        default_warehouse: "{env}_{project}_analytics_wh"
+        roles:
+          - "{env}_{project}_analyst"
+          - "{env}_{project}_reporter"
+        must_change_password: true
+        
+      alice_analytics:
+        email: "alice.analytics@company.com"
+        first_name: "Alice"
+        last_name: "Analytics"
+        display_name: "Alice Analytics"
+        type: "PERSON"  # Human user - MFA will be enforced
+        default_role: "{env}_{project}_analyst"
+        default_warehouse: "{env}_{project}_analytics_wh"
+        roles:
+          - "{env}_{project}_analyst"
+          - "{env}_{project}_data_scientist"  # Also does ML
+        must_change_password: true
+    
+    # Data Scientists - ML and advanced analytics
+    data_scientists:
+      dr_science:
+        email: "dr.science@company.com"
+        first_name: "Doctor"
+        last_name: "Science"
+        display_name: "Dr. Science"
+        type: "PERSON"  # Human user - MFA will be enforced
+        default_role: "{env}_{project}_data_scientist"
+        default_warehouse: "{env}_{project}_ml_wh"
+        roles:
+          - "{env}_{project}_data_scientist"
+          - "{env}_{project}_analyst"
+        must_change_password: true
+    
+    # Business Users - Read-only access
+    business_users:
+      exec_viewer:
+        email: "executive@company.com"
+        first_name: "Executive"
+        last_name: "Viewer"
+        display_name: "Executive Viewer"
+        type: "PERSON"  # Human user - MFA will be enforced
+        default_role: "{env}_{project}_viewer"
+        default_warehouse: "{env}_{project}_query_wh"
+        roles:
+          - "{env}_{project}_viewer"
+        must_change_password: true
+        
+      report_user:
+        email: "reports@company.com"
+        first_name: "Report"
+        last_name: "User"
+        display_name: "Report User"
+        type: "PERSON"  # Human user - MFA will be enforced
+        default_role: "{env}_{project}_reporter"
+        default_warehouse: "{env}_{project}_reporting_wh"
+        roles:
+          - "{env}_{project}_reporter"
+        must_change_password: true
+  
+  # Service accounts - for applications and integrations
+  service_accounts:
+    # ETL/ELT Tools
+    dbt:
+      name: "{env}_{project}_dbt"
+      type: "SERVICE"  # Service account - no password auth, key-pair only
+      comment: "dbt Cloud service account"
+      authentication: "key_pair"
+      default_role: "{env}_{project}_dbt_transformer"
+      default_warehouse: "{env}_{project}_transform_wh"
+      roles:
+        - "{env}_{project}_dbt_transformer"
+      must_change_password: false
+      rsa_public_key: "env:DBT_PUBLIC_KEY"  # Reference to environment variable
+      
+    airflow:
+      name: "{env}_{project}_airflow"
+      type: "SERVICE"  # Service account - no password auth, key-pair only
+      comment: "Apache Airflow orchestration"
+      authentication: "key_pair"
+      default_role: "{env}_{project}_airflow_operator"
+      default_warehouse: "{env}_{project}_admin_wh"
+      roles:
+        - "{env}_{project}_airflow_operator"
+      must_change_password: false
+      rsa_public_key: "env:AIRFLOW_PUBLIC_KEY"
+      
+    fivetran:
+      name: "{env}_{project}_fivetran"
+      type: "LEGACY_SERVICE"  # Temporary - migrate to PAT or key-pair by Nov 2025
+      comment: "Fivetran data ingestion - MIGRATE TO SERVICE TYPE"
+      authentication: "password"  # Fivetran typically uses password
+      default_role: "{env}_{project}_fivetran_loader"
+      default_warehouse: "{env}_{project}_load_wh"
+      roles:
+        - "{env}_{project}_fivetran_loader"
+      must_change_password: false
+      password: "vault:fivetran_password"  # Reference to vault
+      
+    # BI Tools
+    tableau:
+      name: "{env}_{project}_tableau"
+      type: "LEGACY_SERVICE"  # Temporary - migrate to OAuth or key-pair by Nov 2025
+      comment: "Tableau Server service account - MIGRATE TO SERVICE TYPE"
+      authentication: "password"
+      default_role: "{env}_{project}_bi_tool"
+      default_warehouse: "{env}_{project}_bi_wh"
+      roles:
+        - "{env}_{project}_bi_tool"
+      must_change_password: false
+      password: "vault:tableau_password"
+      
+    power_bi:
+      name: "{env}_{project}_powerbi"
+      type: "LEGACY_SERVICE"  # Temporary - migrate to OAuth or key-pair by Nov 2025
+      comment: "Power BI service account - MIGRATE TO SERVICE TYPE"
+      authentication: "password"
+      default_role: "{env}_{project}_bi_tool"
+      default_warehouse: "{env}_{project}_bi_wh"
+      roles:
+        - "{env}_{project}_bi_tool"
+      must_change_password: false
+      password: "vault:powerbi_password"
+      
+    # Custom Applications
+    api_reader:
+      name: "{env}_{project}_api_reader"
+      type: "SERVICE"  # Service account - no password auth, key-pair only
+      comment: "API read-only access"
+      authentication: "key_pair"
+      default_role: "{env}_{project}_reporter"
+      default_warehouse: "{env}_{project}_query_wh"
+      roles:
+        - "{env}_{project}_reporter"
+      must_change_password: false
+      rsa_public_key: "env:API_PUBLIC_KEY"
+      
+    data_loader:
+      name: "{env}_{project}_loader"
+      type: "SERVICE"  # Service account - no password auth, key-pair only
+      comment: "Custom data loading scripts"
+      authentication: "key_pair"
+      default_role: "{env}_{project}_loader"
+      default_warehouse: "{env}_{project}_load_wh"
+      roles:
+        - "{env}_{project}_loader"
+      must_change_password: false
+      rsa_public_key: "env:LOADER_PUBLIC_KEY"
+    
+    # CI/CD
+    terraform:
+      name: "{env}_{project}_terraform"
+      type: "SERVICE"  # High-privilege service account with key-pair auth
+      comment: "Terraform deployment user - secure with network policy"
+      authentication: "key_pair"
+      default_role: "ACCOUNTADMIN"  # Needs high privileges for resource creation
+      default_warehouse: "{env}_{project}_admin_wh"
+      roles:
+        - "ACCOUNTADMIN"  # Only for initial setup
+        - "SYSADMIN"
+        - "SECURITYADMIN"
+      must_change_password: false
+      rsa_public_key: "env:TERRAFORM_PUBLIC_KEY"
+      network_policy: "TERRAFORM_RESTRICTED_ACCESS"  # Strict IP allowlist
+
+# User lifecycle policies
+lifecycle_policies:
+  human_users:
+    password_policy:
+      min_length: 14
+      require_uppercase: true
+      require_lowercase: true
+      require_numeric: true
+      require_special: true
+      max_age_days: 90
+      max_retries: 3
+      lockout_time_mins: 30
+      
+    session_policies:
+      session_timeout_mins: 240  # 4 hours
+      session_timeout_idle_mins: 30
+      
+    network_policy:
+      allowed_ip_list:
+        - "10.0.0.0/8"      # Internal network
+        - "172.16.0.0/12"   # VPN range
+        
+  service_accounts:
+    key_rotation:
+      frequency_days: 90
+      notification_days: 14
+      
+    network_policy:
+      allowed_ip_list:
+        - "10.0.0.0/8"        # Internal network
+        - "52.1.2.3/32"       # NAT Gateway
+        - "34.5.6.0/24"       # Cloud provider range
+
+# Access patterns by user type
+access_patterns:
+  data_engineer:
+    layers: ["raw", "prepare", "analysis"]
+    permissions: ["read", "write", "create"]
+    warehouses: ["all"]
+    
+  analyst:
+    layers: ["prepare", "analysis"]
+    permissions: ["read"]
+    warehouses: ["analytics", "bi"]
+    
+  loader:
+    layers: ["raw"]
+    permissions: ["write"]
+    warehouses: ["load"]
+    
+  transformer:
+    layers: ["raw", "prepare", "analysis"]
+    permissions: ["read on raw", "all on prepare", "write on analysis"]
+    warehouses: ["transform"] 

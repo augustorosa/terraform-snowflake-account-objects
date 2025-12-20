@@ -1,26 +1,99 @@
-# Snowflake Connection Configuration
-# Set these environment variables before running terraform:
-# export SNOWFLAKE_ACCOUNT="your-account-identifier"
-# export SNOWFLAKE_USER="your-username"
-# export SNOWFLAKE_PASSWORD="your-password"
-# export SNOWFLAKE_REGION="us-east-1"
+# =============================================================================
+# TERRAFORM.TFVARS - COMPREHENSIVE EXAMPLE
+# =============================================================================
+# Copy to terraform.tfvars and fill in your credentials:
+#   cp terraform.tfvars.example terraform.tfvars
+# =============================================================================
 
-# Or use these variables in terraform.tfvars (less secure):
-snowflake_account  = "your-account-identifier"
-snowflake_username = "your-username"
-snowflake_password = "your-password"
-snowflake_region   = "us-east-1"
+# Snowflake Connection (REQUIRED)
+organization_name  = "YOUR_ORG"        # e.g., "FDQNVZK"
+snowflake_account  = "YOUR_ACCOUNT"    # e.g., "COB88770"
+snowflake_username = "YOUR_USERNAME"
+snowflake_password = "YOUR_PASSWORD"
+snowflake_warehouse = "COMPUTE_WH"     # Existing warehouse (usually COMPUTE_WH exists by default)
 
 # Project Configuration
-project_name = "analytics"
-environment  = "dev"  # Options: dev, staging, prod
+project_name = "archetype"
+environment  = "dev"
 
-# Organization Details
-organization_name = "my-company"
-team_name         = "data-team"
+# Optional: Organization Details
+team_name    = "data-platform"
+# Note: cost_center and owner_email removed - these tags are not automatically applied by the module
 
-# User Passwords (for testing purposes)
-# In production, use secure password management
-analyst_password  = "AnalystPass123!"
-engineer_password = "EngineerPass123!"
-admin_password    = "AdminPass123!" 
+# Optional: Resource Limits
+data_retention_days  = 7
+monthly_credit_quota = 100
+
+# =============================================================================
+# FEATURE FLAGS - ENABLE EVERYTHING FOR COMPREHENSIVE DEMO
+# =============================================================================
+
+# Core Features
+enable_rbac                    = true
+enable_tagging                 = true
+enable_databases               = true
+enable_warehouses              = true
+enable_data_loading            = true
+enable_resource_monitors       = true
+
+# Security Features
+enable_network_policies        = true
+enable_auto_classification     = true
+enable_authentication_policies = true
+enable_key_pair_auth           = true
+enable_pat_tokens              = true
+enable_external_oauth          = false  # Requires external OAuth provider setup
+
+# Database Organization
+enable_central_settings_db     = true
+use_central_db_for_tags        = true  # Tags in ULONO.TAGS instead of ULONO_DEV_TAGS_DB
+
+# Role Creation
+create_functional_roles        = true  # READER, WRITER, ADMIN
+create_data_access_roles       = true  # INGEST, TRANSFORM, ANALYSIS, SCIENTIST
+create_default_roles           = true  # Backward compatibility
+
+# Network Configuration
+allowed_ip_ranges = ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]
+
+# Optional: Preview Features (required for stages, file formats, and network rules)
+preview_features_enabled = [
+  "snowflake_stage_resource",
+  "snowflake_file_format_resource",
+  "snowflake_network_rule_resource",
+  "snowflake_table_resource"
+]
+
+# =============================================================================
+# SERVICE USERS & AUTHENTICATION EXAMPLES
+# =============================================================================
+
+# Example: RSA Key-Pair Authentication (COMMENTED - requires external key generation)
+# Uncomment and provide your RSA public keys to use key-pair authentication
+# Generate keys with: openssl genrsa -out private_key.pem 2048 && openssl rsa -in private_key.pem -pubout -out public_key.pem
+# service_users = {
+#   "YOUR_PROJECT_DEV_API_SVC" = {
+#     comment           = "API service user with RSA key-pair auth"
+#     default_role      = "YOUR_PROJECT_DEV_INGEST_RL"
+#     default_warehouse = "COMPUTE_WH"
+#     email             = "api-service@example.com"
+#     rsa_public_key    = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA..."  # Your Base64 encoded public key
+#     rsa_public_key_2  = null  # Optional: For key rotation
+#     days_to_expiry    = 365   # Optional: Account expiry in days
+#   }
+# }
+
+# Example: Personal Access Tokens (PAT) - Recommended for service-to-service auth
+# These are easier to manage than RSA keys and support role restrictions
+# Uncomment to create PAT tokens after service users are created
+# pat_tokens = {
+#   "YOUR_PROJECT_DEV_INGEST_PAT" = {
+#     user_name      = "YOUR_PROJECT_DEV_INGEST_SVC"  # References the service user created in main.tf
+#     comment        = "PAT token for data ingestion service"
+#     days_to_expiry = 90                             # Token expires in 90 days
+#     disabled       = false
+#     role_restriction = "YOUR_PROJECT_DEV_INGEST_RL" # Token can only use this role
+#     mins_to_bypass_network_policy_requirement = 10  # Allow 10 mins to bypass network policy during rotation
+#     expire_rotated_token_after_hours          = 24  # Old tokens expire 24hrs after rotation
+#   }
+# }

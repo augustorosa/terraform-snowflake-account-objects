@@ -1,0 +1,237 @@
+# Warehouse Configuration - Optimized for 3-Layer Architecture
+# This file defines warehouses for each layer and workload type
+
+version: "1.0"
+description: "Warehouse configuration aligned with RAW → PREPARE → ANALYSIS layers"
+
+# Global warehouse settings
+defaults:
+  auto_resume: true
+  initially_suspended: true
+  statement_timeout_in_seconds: 3600  # 1 hour default
+  statement_queued_timeout_in_seconds: 600  # 10 minutes
+  resource_monitor: "{env}_{project}_default_monitor"
+
+warehouses:
+  # Layer 1: RAW - Data Loading Warehouses
+  load:
+    name: "{env}_{project}_load_wh"
+    comment: "Data ingestion warehouse for RAW layer"
+    size: 
+      dev: "X-SMALL"
+      staging: "X-SMALL"
+      prod: "SMALL"
+    auto_suspend: 60  # 1 minute - quick suspend for cost savings
+    min_cluster_count: 1
+    max_cluster_count:
+      dev: 1
+      staging: 2
+      prod: 3
+    scaling_policy: "STANDARD"
+    warehouse_type: "STANDARD"
+    roles:
+      - role: "{env}_{project}_loader"
+        privileges: ["usage", "operate"]
+      - role: "{env}_{project}_fivetran_loader"
+        privileges: ["usage"]
+      - role: "{env}_{project}_data_engineer"
+        privileges: ["usage", "operate", "monitor", "modify"]
+    
+  # Layer 2: PREPARE - Transformation Warehouses
+  transform:
+    name: "{env}_{project}_transform_wh"
+    comment: "Data transformation warehouse for PREPARE layer"
+    size:
+      dev: "SMALL"
+      staging: "MEDIUM"
+      prod: "LARGE"
+    auto_suspend: 300  # 5 minutes - longer for sequential transforms
+    min_cluster_count: 1
+    max_cluster_count:
+      dev: 2
+      staging: 3
+      prod: 5
+    scaling_policy: "ECONOMY"  # Save costs during off-peak
+    warehouse_type: "STANDARD"
+    query_acceleration_max_scale_factor: 8  # For complex queries
+    enable_query_acceleration: true
+    roles:
+      - role: "{env}_{project}_transformer"
+        privileges: ["usage", "operate"]
+      - role: "{env}_{project}_dbt_transformer"
+        privileges: ["usage", "operate", "monitor"]
+      - role: "{env}_{project}_data_engineer"
+        privileges: ["usage", "operate", "monitor", "modify"]
+    
+  # Layer 3: ANALYSIS - Analytics Warehouses
+  analytics:
+    name: "{env}_{project}_analytics_wh"
+    comment: "Analytics queries warehouse for ANALYSIS layer"
+    size:
+      dev: "SMALL"
+      staging: "MEDIUM"
+      prod: "LARGE"
+    auto_suspend: 600  # 10 minutes - keep warm for analysts
+    min_cluster_count: 1
+    max_cluster_count:
+      dev: 2
+      staging: 4
+      prod: 10
+    scaling_policy: "STANDARD"
+    warehouse_type: "STANDARD"
+    query_acceleration_max_scale_factor: 8
+    enable_query_acceleration: true
+    roles:
+      - role: "{env}_{project}_analyst"
+        privileges: ["usage"]
+      - role: "{env}_{project}_data_scientist"
+        privileges: ["usage", "operate"]
+      - role: "{env}_{project}_reporter"
+        privileges: ["usage"]
+      - role: "{env}_{project}_data_engineer"
+        privileges: ["usage", "operate", "monitor", "modify"]
+
+  # Specialized Warehouses
+  admin:
+    name: "{env}_{project}_admin_wh"
+    comment: "Administrative tasks and maintenance"
+    size: "X-SMALL"
+    auto_suspend: 60
+    min_cluster_count: 1
+    max_cluster_count: 1
+    roles:
+      - role: "{env}_{project}_admin"
+        privileges: ["all privileges"]
+      - role: "{env}_{project}_airflow_operator"
+        privileges: ["usage", "operate"]
+        
+  bi:
+    name: "{env}_{project}_bi_wh"
+    comment: "Dedicated warehouse for BI tools"
+    size:
+      dev: "SMALL"
+      staging: "MEDIUM"
+      prod: "LARGE"
+    auto_suspend: 900  # 15 minutes - BI tools need consistency
+    min_cluster_count: 1
+    max_cluster_count:
+      dev: 2
+      staging: 3
+      prod: 5
+    scaling_policy: "STANDARD"
+    warehouse_type: "STANDARD"
+    statement_timeout_in_seconds: 1800  # 30 minutes for complex reports
+    roles:
+      - role: "{env}_{project}_bi_tool"
+        privileges: ["usage"]
+      - role: "{env}_{project}_reporter"
+        privileges: ["usage"]
+        
+  ml:
+    name: "{env}_{project}_ml_wh"
+    comment: "Machine learning and data science workloads"
+    size:
+      dev: "MEDIUM"
+      staging: "LARGE"
+      prod: "X-LARGE"
+    auto_suspend: 300
+    min_cluster_count: 1
+    max_cluster_count:
+      dev: 2
+      staging: 3
+      prod: 4
+    scaling_policy: "STANDARD"
+    warehouse_type: "STANDARD"
+    enable_query_acceleration: true
+    query_acceleration_max_scale_factor: 16  # High for complex ML queries
+    statement_timeout_in_seconds: 7200  # 2 hours for ML training
+    roles:
+      - role: "{env}_{project}_data_scientist"
+        privileges: ["usage", "operate", "monitor"]
+        
+  developer:
+    name: "{env}_{project}_dev_wh"
+    comment: "Development and testing warehouse"
+    size: "SMALL"
+    auto_suspend: 300
+    min_cluster_count: 1
+    max_cluster_count: 2
+    scaling_policy: "STANDARD"
+    warehouse_type: "STANDARD"
+    roles:
+      - role: "{env}_{project}_developer"
+        privileges: ["usage", "operate"]
+      - role: "{env}_{project}_data_engineer"
+        privileges: ["usage", "operate", "monitor"]
+
+# Warehouse sizing recommendations
+sizing_guidelines:
+  X-SMALL:
+    credits_per_hour: 1
+    use_cases:
+      - "Light data loading"
+      - "Administrative tasks"
+      - "Development testing"
+    concurrent_queries: "1-2"
+    
+  SMALL:
+    credits_per_hour: 2
+    use_cases:
+      - "Regular data loading"
+      - "Simple transformations"
+      - "Basic analytics"
+    concurrent_queries: "2-4"
+    
+  MEDIUM:
+    credits_per_hour: 4
+    use_cases:
+      - "Complex transformations"
+      - "Multiple concurrent users"
+      - "Standard BI workloads"
+    concurrent_queries: "4-8"
+    
+  LARGE:
+    credits_per_hour: 8
+    use_cases:
+      - "Heavy transformations"
+      - "Large user base"
+      - "Complex analytics"
+    concurrent_queries: "8-16"
+    
+  X-LARGE:
+    credits_per_hour: 16
+    use_cases:
+      - "ML model training"
+      - "Very large datasets"
+      - "High concurrency"
+    concurrent_queries: "16-32"
+
+# Resource monitors for cost control
+resource_monitors:
+  default:
+    name: "{env}_{project}_default_monitor"
+    credit_quota:
+      dev: 1000
+      staging: 5000
+      prod: 20000
+    frequency: "MONTHLY"
+    start_timestamp: "IMMEDIATELY"
+    notify_triggers: [50, 75, 90, 100]
+    suspend_triggers: [100]
+    suspend_immediate_triggers: [110]
+    
+  transform:
+    name: "{env}_{project}_transform_monitor"
+    credit_quota:
+      dev: 500
+      staging: 2000
+      prod: 10000
+    warehouses: ["{env}_{project}_transform_wh"]
+    
+  analytics:
+    name: "{env}_{project}_analytics_monitor"
+    credit_quota:
+      dev: 300
+      staging: 1500
+      prod: 8000
+    warehouses: ["{env}_{project}_analytics_wh", "{env}_{project}_bi_wh"] 

@@ -1,149 +1,172 @@
-# Module Outputs
-output "module_outputs" {
-  description = "Outputs from the snowflake_account_objects module"
+# =============================================================================
+# OUTPUTS - Comprehensive Example
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Module Summary
+# -----------------------------------------------------------------------------
+
+output "deployment_info" {
+  description = "Deployment information"
   value = {
-    functional_roles     = module.snowflake_account_objects.functional_roles
-    data_access_roles    = module.snowflake_account_objects.data_access_roles
-    all_roles           = module.snowflake_account_objects.all_roles
-    functional_role_names = module.snowflake_account_objects.functional_role_names
-    data_access_role_names = module.snowflake_account_objects.data_access_role_names
-    all_role_names      = module.snowflake_account_objects.all_role_names
+    project     = var.project_name
+    environment = var.environment
+    team        = var.team_name
+    features_enabled = {
+      rbac                = true
+      tagging             = true
+      databases           = true
+      warehouses          = true
+      data_loading        = true
+      resource_monitors   = true
+      network_policies    = var.enable_network_policies
+      central_settings_db = true
+    }
   }
 }
 
+# -----------------------------------------------------------------------------
 # Database Outputs
-output "analytics_database" {
-  description = "Analytics database details"
-  value = {
-    name    = snowflake_database.analytics_db.name
-    comment = snowflake_database.analytics_db.comment
-  }
+# -----------------------------------------------------------------------------
+
+output "databases" {
+  description = "Created databases with their schemas"
+  value       = module.snowflake_account_objects.databases
 }
 
-# Schema Outputs
-output "data_schemas" {
-  description = "Data layer schemas"
-  value = {
-    raw     = {
-      name    = snowflake_schema.raw_schema.name
-      comment = snowflake_schema.raw_schema.comment
-    }
-    prepare = {
-      name    = snowflake_schema.prepare_schema.name
-      comment = snowflake_schema.prepare_schema.comment
-    }
-    analyze = {
-      name    = snowflake_schema.analyze_schema.name
-      comment = snowflake_schema.analyze_schema.comment
-    }
-  }
+output "schemas" {
+  description = "Created schemas organized by layer"
+  value       = module.snowflake_account_objects.schemas
 }
 
+# -----------------------------------------------------------------------------
 # Warehouse Outputs
+# -----------------------------------------------------------------------------
+
 output "warehouses" {
-  description = "Warehouse details"
+  description = "Created warehouses"
+  value       = module.snowflake_account_objects.warehouses
+}
+
+# -----------------------------------------------------------------------------
+# RBAC Outputs
+# -----------------------------------------------------------------------------
+
+output "functional_roles" {
+  description = "Created functional roles"
+  value       = module.snowflake_account_objects.functional_roles
+}
+
+output "data_access_roles" {
+  description = "Created data access roles"
+  value       = module.snowflake_account_objects.data_access_roles
+}
+
+output "custom_roles" {
+  description = "Created custom functional roles"
+  value       = module.snowflake_account_objects.custom_roles
+}
+
+# -----------------------------------------------------------------------------
+# Tagging Outputs
+# -----------------------------------------------------------------------------
+
+# Note: tag_database and governance_tags outputs are not available in the module
+# Use tag_associations_summary instead for tagging information
+
+output "tag_associations_summary" {
+  description = "Summary of applied tag associations"
+  value       = module.snowflake_account_objects.tag_associations_summary
+}
+
+# -----------------------------------------------------------------------------
+# Central Settings Outputs
+# -----------------------------------------------------------------------------
+
+output "central_settings_database" {
+  description = "Central settings database with schemas"
+  value       = module.snowflake_account_objects.central_settings_database
+}
+
+# -----------------------------------------------------------------------------
+# Resource Monitor Outputs
+# -----------------------------------------------------------------------------
+
+output "resource_monitors" {
+  description = "Created resource monitors"
+  value       = module.snowflake_account_objects.resource_monitors
+}
+
+# -----------------------------------------------------------------------------
+# Network Policy Outputs (if enabled)
+# -----------------------------------------------------------------------------
+
+output "network_rules" {
+  description = "Created network rules"
+  value       = var.enable_network_policies ? module.snowflake_account_objects.network_rules : {}
+}
+
+output "network_policies" {
+  description = "Created network policies"
+  value       = var.enable_network_policies ? module.snowflake_account_objects.network_policies : {}
+}
+
+# -----------------------------------------------------------------------------
+# Data Loading Outputs
+# -----------------------------------------------------------------------------
+
+output "stages" {
+  description = "Created stages"
+  value       = module.snowflake_account_objects.stages
+}
+
+output "file_formats" {
+  description = "Created file formats"
+  value       = module.snowflake_account_objects.file_formats
+}
+
+# -----------------------------------------------------------------------------
+# Naming Convention Reference
+# -----------------------------------------------------------------------------
+
+output "naming_convention" {
+  description = "Naming convention used for resources"
   value = {
-    etl = {
-      name           = snowflake_warehouse.etl_warehouse.name
-      warehouse_size = snowflake_warehouse.etl_warehouse.warehouse_size
-      auto_suspend   = snowflake_warehouse.etl_warehouse.auto_suspend
-      comment        = snowflake_warehouse.etl_warehouse.comment
-    }
-    analytics = {
-      name           = snowflake_warehouse.analytics_warehouse.name
-      warehouse_size = snowflake_warehouse.analytics_warehouse.warehouse_size
-      auto_suspend   = snowflake_warehouse.analytics_warehouse.auto_suspend
-      comment        = snowflake_warehouse.analytics_warehouse.comment
-    }
+    prefix_pattern = "PROJECT_ENV"
+    example        = "${upper(var.project_name)}_${upper(substr(var.environment, 0, 3))}"
+    databases      = "${upper(var.project_name)}_${upper(substr(var.environment, 0, 3))}_*_DB"
+    warehouses     = "${upper(var.project_name)}_${upper(substr(var.environment, 0, 3))}_*_WH"
+    roles          = "${upper(var.project_name)}_${upper(substr(var.environment, 0, 3))}_*_RL"
   }
 }
 
-# User Outputs
-output "users" {
-  description = "Created users"
+# -----------------------------------------------------------------------------
+# Service User & Authentication Outputs
+# -----------------------------------------------------------------------------
+
+output "service_user" {
+  description = "Service user for data ingestion"
   value = {
-    analyst = {
-      name    = snowflake_user.analyst_user.name
-      comment = snowflake_user.analyst_user.comment
-    }
-    engineer = {
-      name    = snowflake_user.engineer_user.name
-      comment = snowflake_user.engineer_user.comment
-    }
-    admin = {
-      name    = snowflake_user.admin_user.name
-      comment = snowflake_user.admin_user.comment
-    }
+    name           = snowflake_user.ingest_service.name
+    role           = snowflake_user.ingest_service.default_role
+    warehouse      = snowflake_user.ingest_service.default_warehouse
+    post_setup_sql = "ALTER USER ${snowflake_user.ingest_service.name} SET TYPE = 'SERVICE';"
   }
 }
 
-# Table Outputs
-output "sample_tables" {
-  description = "Sample tables created for testing"
-  value = {
-    raw_data = {
-      name    = snowflake_table.sample_raw_table.name
-      schema  = snowflake_table.sample_raw_table.schema
-      comment = snowflake_table.sample_raw_table.comment
-    }
-    analytics_data = {
-      name    = snowflake_table.sample_analyze_table.name
-      schema  = snowflake_table.sample_analyze_table.schema
-      comment = snowflake_table.sample_analyze_table.comment
-    }
-  }
+output "pat_token" {
+  description = "Personal Access Token for service user (SENSITIVE - Store securely!)"
+  value       = snowflake_user_programmatic_access_token.ingest_service_pat.token
+  sensitive   = true
 }
 
-# Role Assignment Examples
-output "role_usage_examples" {
-  description = "Examples of how to use the created roles"
+output "pat_token_info" {
+  description = "PAT token configuration and usage"
   value = {
-    analyst_role = {
-      role_name = module.snowflake_account_objects.functional_roles["READER"].name
-      user_name = snowflake_user.analyst_user.name
-      permissions = "Read-only access to ANALYZE layer"
-      sql_command = "GRANT ROLE ${module.snowflake_account_objects.functional_roles["READER"].name} TO USER ${snowflake_user.analyst_user.name};"
-    }
-    engineer_role = {
-      role_name = module.snowflake_account_objects.functional_roles["WRITER"].name
-      user_name = snowflake_user.engineer_user.name
-      permissions = "Read/write access to all layers (inherits READER)"
-      sql_command = "GRANT ROLE ${module.snowflake_account_objects.functional_roles["WRITER"].name} TO USER ${snowflake_user.engineer_user.name};"
-    }
-    admin_role = {
-      role_name = module.snowflake_account_objects.functional_roles["ADMIN"].name
-      user_name = snowflake_user.admin_user.name
-      permissions = "Full access to everything (inherits WRITER + READER)"
-      sql_command = "GRANT ROLE ${module.snowflake_account_objects.functional_roles["ADMIN"].name} TO USER ${snowflake_user.admin_user.name};"
-    }
+    token_name       = snowflake_user_programmatic_access_token.ingest_service_pat.name
+    user_name        = snowflake_user_programmatic_access_token.ingest_service_pat.user
+    role_restriction = snowflake_user_programmatic_access_token.ingest_service_pat.role_restriction
+    days_to_expiry   = snowflake_user_programmatic_access_token.ingest_service_pat.days_to_expiry
+    usage_example    = "export SNOWFLAKE_PASSWORD=$(terraform output -raw pat_token)"
   }
 }
-
-# Connection Information
-output "connection_info" {
-  description = "Connection information for testing"
-  value = {
-    account  = var.snowflake_account
-    region   = var.snowflake_region
-    database = snowflake_database.analytics_db.name
-    warehouse_etl = snowflake_warehouse.etl_warehouse.name
-    warehouse_analytics = snowflake_warehouse.analytics_warehouse.name
-  }
-  sensitive = true
-}
-
-# Testing Commands
-output "testing_commands" {
-  description = "SQL commands to test the implementation"
-  value = {
-    grant_roles = [
-      "GRANT ROLE ${module.snowflake_account_objects.functional_roles["READER"].name} TO USER ${snowflake_user.analyst_user.name};",
-      "GRANT ROLE ${module.snowflake_account_objects.functional_roles["WRITER"].name} TO USER ${snowflake_user.engineer_user.name};",
-      "GRANT ROLE ${module.snowflake_account_objects.functional_roles["ADMIN"].name} TO USER ${snowflake_user.admin_user.name};"
-    ]
-    test_analyst_access = "USE ROLE ${module.snowflake_account_objects.functional_roles["READER"].name}; USE DATABASE ${snowflake_database.analytics_db.name}; USE SCHEMA ${snowflake_schema.analyze_schema.name}; SELECT * FROM ${snowflake_table.sample_analyze_table.name} LIMIT 10;"
-    test_engineer_access = "USE ROLE ${module.snowflake_account_objects.functional_roles["WRITER"].name}; USE DATABASE ${snowflake_database.analytics_db.name}; USE SCHEMA ${snowflake_schema.raw_schema.name}; SELECT * FROM ${snowflake_table.sample_raw_table.name} LIMIT 10;"
-    test_admin_access = "USE ROLE ${module.snowflake_account_objects.functional_roles["ADMIN"].name}; USE DATABASE ${snowflake_database.analytics_db.name}; SHOW SCHEMAS;"
-    check_role_hierarchy = "SHOW GRANTS TO ROLE ${module.snowflake_account_objects.functional_roles["ADMIN"].name};"
-  }
-} 

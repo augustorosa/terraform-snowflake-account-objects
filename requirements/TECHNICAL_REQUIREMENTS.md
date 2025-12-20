@@ -136,7 +136,7 @@ provider "snowflake" {
 
 ### 5.1 YAML Configuration Structure
 ```yaml
-# config/rbac.yml
+# docs/config-patterns/examples/single-account/roles.yml (Documentation only)
 version: "1.0"
 environment:
   naming_strategy: "prefix"
@@ -151,7 +151,7 @@ roles:
             schemas: ["analyze"]
             privileges: ["read"]
             
-# config/databases.yml
+# docs/config-patterns/examples/single-account/databases.yml (Documentation only)
 databases:
   main:
     name: "{env}_{project}_db"

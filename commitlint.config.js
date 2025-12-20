@@ -4,6 +4,7 @@ module.exports = {
     'body-leading-blank': [2, 'always'],
     'footer-leading-blank': [2, 'always'],
     'header-max-length': [2, 'always', 100],
+    'body-max-line-length': [2, 'always', 120], // Allow up to 120 chars per line in body
     'scope-case': [2, 'always', 'lower-case'],
     'subject-case': [2, 'never', ['sentence-case', 'start-case', 'pascal-case', 'upper-case']],
     'subject-empty': [2, 'never'],
@@ -41,10 +42,13 @@ module.exports = {
         'export',
         'monitoring',
         'tagging',
+        'naming',
         'docs',
         'examples',
         'tests',
         'ci',
+        'commitlint',
+        'pr-validation',
         'deps'
       ]
     ]
