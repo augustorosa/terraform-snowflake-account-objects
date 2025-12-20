@@ -661,7 +661,7 @@ output "module_metadata" {
   description = "Metadata about the module deployment"
   value = {
     module_version             = var.module_version
-    terraform_version          = "~> 1.5.7"
+    terraform_version          = "~> 1.10.0"
     snowflake_provider_version = "= 2.11.0"
     deployment_timestamp       = timestamp()
 

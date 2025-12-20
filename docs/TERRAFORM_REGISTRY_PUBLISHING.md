@@ -123,7 +123,7 @@ https://registry.terraform.io/modules/{YOUR_USERNAME}/account-objects/snowflake
 ### ✅ **Registry Quality Indicators**
 
 - **Provider Compatibility**: Snowflake provider ~> 2.0
-- **Terraform Version**: >= 1.5.7
+- **Terraform Version**: >= 1.10.0
 - **Input Validation**: Comprehensive variable validation
 - **Output Documentation**: All outputs clearly described
 - **Example Quality**: Real-world usage scenarios

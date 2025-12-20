@@ -30,7 +30,7 @@ By participating in this project, you agree to abide by our Code of Conduct. Ple
 
 ### Prerequisites
 
-- Terraform >= 1.5.7
+- Terraform >= 1.10.0
 - Go >= 1.21 (for testing)
 - Pre-commit hooks
 - Node.js >= 20 (for semantic release)
@@ -51,8 +51,8 @@ cd tests
 go mod download
 
 # Install Terraform
-tfenv install 1.5.7
-tfenv use 1.5.7
+tfenv install 1.10.5
+tfenv use 1.10.5
 ```
 
 ## Commit Convention
