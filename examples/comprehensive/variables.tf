@@ -136,16 +136,16 @@ variable "allowed_ip_ranges" {
 variable "service_users" {
   description = "Service users to create with optional RSA key-pair authentication"
   type = map(object({
-    comment              = optional(string, "Service user managed by Terraform")
-    default_role         = optional(string, "PUBLIC")
-    default_warehouse    = optional(string)
-    disabled             = optional(bool, false)
-    display_name         = optional(string)
-    email                = optional(string)
-    login_name           = optional(string)
-    rsa_public_key       = optional(string, null) # Base64 encoded public key
-    rsa_public_key_2     = optional(string, null) # For key rotation
-    days_to_expiry       = optional(number, null) # Account expiry
+    comment           = optional(string, "Service user managed by Terraform")
+    default_role      = optional(string, "PUBLIC")
+    default_warehouse = optional(string)
+    disabled          = optional(bool, false)
+    display_name      = optional(string)
+    email             = optional(string)
+    login_name        = optional(string)
+    rsa_public_key    = optional(string, null) # Base64 encoded public key
+    rsa_public_key_2  = optional(string, null) # For key rotation
+    days_to_expiry    = optional(number, null) # Account expiry
   }))
   default = {}
 }
@@ -157,7 +157,7 @@ variable "pat_tokens" {
     comment                                   = optional(string, "PAT token managed by Terraform")
     days_to_expiry                            = optional(number, 90)
     disabled                                  = optional(bool, false)
-    role_restriction                          = optional(string, null)  # Single role name, not a list
+    role_restriction                          = optional(string, null) # Single role name, not a list
     mins_to_bypass_network_policy_requirement = optional(number, null)
     expire_rotated_token_after_hours          = optional(number, 24)
   }))

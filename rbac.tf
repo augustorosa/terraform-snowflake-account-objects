@@ -23,8 +23,8 @@
 
 locals {
   # Backward compatibility: create_default_roles controls both if new flags not set
-  should_create_functional_roles   = var.enable_rbac && (var.create_functional_roles || var.create_default_roles)
-  should_create_data_access_roles  = var.enable_rbac && (var.create_data_access_roles || var.create_default_roles)
+  should_create_functional_roles  = var.enable_rbac && (var.create_functional_roles || var.create_default_roles)
+  should_create_data_access_roles = var.enable_rbac && (var.create_data_access_roles || var.create_default_roles)
 }
 
 # =============================================================================

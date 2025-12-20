@@ -147,9 +147,9 @@ output "naming_convention" {
 output "service_user" {
   description = "Service user for data ingestion"
   value = {
-    name     = snowflake_user.ingest_service.name
-    role     = snowflake_user.ingest_service.default_role
-    warehouse = snowflake_user.ingest_service.default_warehouse
+    name           = snowflake_user.ingest_service.name
+    role           = snowflake_user.ingest_service.default_role
+    warehouse      = snowflake_user.ingest_service.default_warehouse
     post_setup_sql = "ALTER USER ${snowflake_user.ingest_service.name} SET TYPE = 'SERVICE';"
   }
 }
