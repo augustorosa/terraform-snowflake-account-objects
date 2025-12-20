@@ -58,12 +58,13 @@ jobs:
             chore
             revert
           requireScope: false
-          # Allow version numbers and other patterns at start of subject
-          subjectPattern: ^[A-Z0-9].+$
+          # Allow version numbers (v0.6.0) and other patterns at start of subject
+          # Pattern: uppercase letter, digit, or 'v' (for version numbers)
+          subjectPattern: ^(v|[A-Z]|[0-9]).+$
           subjectPatternError: |
             The subject "{subject}" found in the pull request title "{title}"
             doesn't match the configured pattern. Please ensure that the subject
-            starts with an uppercase letter or number.
+            starts with an uppercase letter, number, or version number (e.g., v0.6.0).
 
   pr-size:
     name: Check PR Size

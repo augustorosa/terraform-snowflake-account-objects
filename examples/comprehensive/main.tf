@@ -32,6 +32,10 @@ provider "snowflake" {
   warehouse         = var.snowflake_warehouse != null ? var.snowflake_warehouse : null
 
   preview_features_enabled = var.preview_features_enabled
+
+  # Workaround for macOS TLS certificate verification issues
+  # Remove this in production and ensure proper certificate chain
+  insecure_mode = true
 }
 
 # Local variables for naming
@@ -41,8 +45,6 @@ locals {
     qa   = "QA"
     prod = "PRD"
   }
-  # Pattern: PROJECT_ENV (e.g., ULONO_DEV)
-  base_prefix = upper("${var.project_name}_${local.env_prefix[lower(var.environment)]}")
 }
 
 # =============================================================================

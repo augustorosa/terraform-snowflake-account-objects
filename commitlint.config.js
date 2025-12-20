@@ -42,6 +42,7 @@ module.exports = {
         'export',
         'monitoring',
         'tagging',
+        'naming',
         'docs',
         'examples',
         'tests',
